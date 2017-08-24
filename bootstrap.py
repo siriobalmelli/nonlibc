@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
+import os
 import subprocess
 import sys
-import os
+
 
 def run(command_seq_, shell_=False, die_=False, output_=False, cwd_=None, silent_=False):
 
@@ -56,7 +57,7 @@ def run_pkg(sudo_, mgr_, opt_, pkg_):
 
     for i in range(len(mgr_)):
         if not run(['which', mgr_[i]], silent_=True):
-            return run([sudo_[i], mgr_[i], opt_[i], pkg_[i]], shell_=True, silent_=True)
+            return run([sudo_[i], mgr_[i], opt_[i], pkg_[i]], shell_=True)
 
     print('failed to find a package manager and install {0}'.format(pkg_[0]),
           file=sys.stderr,
