@@ -193,7 +193,7 @@ class template():
 # All variables in a target are available for substitution inside recipes.
 targets = {	"pip3" : {
 				"recipes" : [
-					{ "template" : "apt-get", "recipe" : { "pkg_name" : "python3-pip" } }
+					{ "template" : "apt-get", "recipe" : { "pkg_name" : "python3-pip" } },
                                         { "template" : "dnf", "recipe" : { "pkg_name" : "python3-pip" } }
 				]
 			},
@@ -230,7 +230,7 @@ targets = {	"pip3" : {
 				"recipes" : [
 					{ "template" : "port", "recipe" : { "pkg_name" : "valgrind" } },
 					{ "template" : "brew", "recipe" : { "pkg_name" : "valgrind" } },
-					{ "template" : "apt-get", "recipe" : { "pkg_name" : "valgrind" } }
+					{ "template" : "apt-get", "recipe" : { "pkg_name" : "valgrind" } },
 					{ "template" : "dnf", "recipe" : { "pkg_name" : "valgrind" } },
 				]
 			}
