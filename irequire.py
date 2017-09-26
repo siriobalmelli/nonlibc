@@ -132,7 +132,7 @@ templates = {
 								[ "sudo", "unzip", "-o", "-d", "{install_d}/", "{temp_dir}/{bin_name}.zip" ],
 								[ "sudo", "chmod", "go+rx", "{install_d}/{bin_name}" ]
 							]
-			}
+			},
                         "dnf" :  {
 				"platform" : [ "linux" ],
 				"requires" : [ "dnf" ],
