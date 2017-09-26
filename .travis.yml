@@ -25,6 +25,15 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install python3; fi
 
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then tar -xvf Python-3.6.2.tgz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd Python-3.6.2.tgz; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./configure; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then make install; fi
+
+
+
 script:
   - ./bootstrap.py
 ...
