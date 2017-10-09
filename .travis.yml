@@ -92,13 +92,14 @@ before_install:
 #+  my solution is downloading ad building it from source.
 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      cd ~;
+      pushd ~;
       wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz;
       tar -xf Python-3.6.2.tgz;
       cd Python-3.6.2;
       ./configure;
       make -s;
       sudo make install -s;
+      popd;
     fi
 
 script:
