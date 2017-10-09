@@ -22,6 +22,7 @@ matrix:
             - ruby-dev
             - g++-7
             - pandoc
+            - valgrind
 
     - os: linux
       dist: trusty
@@ -35,6 +36,7 @@ matrix:
             - ruby-dev
             - clang-5.0
             - pandoc
+            - valgrind
 
     - os: osx
       compiler: clang
@@ -90,15 +92,13 @@ before_install:
 #+  my solution is downloading ad building it from source.
 
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-      pushd ~;
+      cd ~;
       wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz;
       tar -xf Python-3.6.2.tgz;
-      pushd Python-3.6.2;
+      cd Python-3.6.2;
       ./configure;
       make -s;
       sudo make install -s;
-      popd;
-      popd;
     fi
 
 script:
