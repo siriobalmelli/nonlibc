@@ -21,6 +21,7 @@ matrix:
           packages:
             - ruby-dev
             - g++-7
+            - pandoc
 
     - os: linux
       dist: trusty
@@ -33,6 +34,7 @@ matrix:
           packages:
             - ruby-dev
             - clang-5.0
+            - pandoc
 
     - os: osx
       compiler: clang
