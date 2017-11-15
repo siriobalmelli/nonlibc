@@ -5,7 +5,7 @@ stdenv.mkDerivation rec {
 	env = buildEnv { name = name; paths = nativeBuildInputs; };
 	nativeBuildInputs = [
 		pandoc
-		gcc
+		(lowPrio gcc)
 		clang
 		clang-tools
 		ninja

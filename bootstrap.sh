@@ -1,6 +1,5 @@
 #!/bin/bash
 # Compile and test all variants.
-# May fail if components of the toolchain are missing TODO: explain how to resolve
 set -e
 
 # remove existing builds
@@ -25,7 +24,7 @@ pushd ./build-debugoptimized-gcc \
 popd
 
 # build and test sanitizers
-#sanitizers="b_sanitize=address b_sanitize=thread"
+#sanitizers="b_sanitize=address b_sanitize=thread" # Nix's clang-4.0.1 has no tsan?
 sanitizers="b_sanitize=address"
 for san in $sanitizers; do
 	type="debugoptimized"
