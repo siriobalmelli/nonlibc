@@ -9,10 +9,11 @@ if ! type nix-env; then
 	# re-source files as opposed to running nix.sh
 	#+	because on macOS it's nix-daemon.sh or some such
 	#+	and I still have no clue what I'm doing with Nix :P
-	re_source="/etc/bashrc ~/.bashrc ~/.bash_profile"
+	re_source="/etc/bashrc $HOME/.bashrc $HOME/.bash_profile"
 	for f in $re_source; do
-		if [[ -e $f ]]; then source $f; fi
+		source "$f" || true
 	done
+
 fi
 
 nix-shell --pure --run "./bootstrap.sh"
