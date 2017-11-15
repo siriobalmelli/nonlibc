@@ -11,7 +11,7 @@ if ! type nix-env; then
 	#+	and I still have no clue what I'm doing with Nix :P
 	re_source="/etc/bashrc $HOME/.bashrc $HOME/.bash_profile"
 	for f in $re_source; do
-		source "$f" || true
+		if [[ -e "$f" ]]; then source "$f"; fi
 	done
 
 fi
