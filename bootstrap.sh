@@ -1,5 +1,7 @@
 #!/bin/bash
 # Compile and test all variants.
+#+	... if you're missing tools (or running a blank/vanilla system),
+#+	run ./nix-toolchain.sh instead.
 set -e
 
 # remove existing builds
@@ -17,6 +19,9 @@ for cc in $compilers; do
 		popd
 	done
 done
+
+# Index codebase
+cscope -b -q -U -I ./include -s ./src -s ./util -s ./test
 
 # run valgrind
 # TODO: won't fly on a 3.13.0-32-generic (ubuntu 12.04 EOL)
