@@ -13,7 +13,6 @@ else
 	do_install = false
 endif
 
-compiler = meson.get_compiler('c')
 
 #
 #	build options by type
@@ -38,14 +37,6 @@ elif get_option('buildtype') == 'release'
 elif get_option('buildtype') == 'plain'
   add_project_arguments([ '-DNDEBUG', '-march=core2' ],
 			language : 'c')
-endif
-
-
-# sanitizers
-# work around buggy gcc
-if get_option('b_sanitize') != '' and compiler.get_id() == 'gcc'
-	message('use gold linker for sanitizers')
-	add_project_link_arguments([ '-fuse-ld=gold' ], language : 'c')
 endif
 
 

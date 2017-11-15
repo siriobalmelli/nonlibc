@@ -18,18 +18,18 @@ foreach t : tests
 		a_test = executable(name + '_shared', t,
 				include_directories : inc,
 				link_with : nonlibc_shared)
-		test(name_spaced + ' (shared)', a_test)
+		test(name_spaced + ' (shared)', a_test, timeout : 45)
 
 		test_static = executable(name + '_static', t,
 				include_directories : inc,
 				link_with : nonlibc_static)
-		test(name_spaced + ' (static)', test_static)
+		test(name_spaced + ' (static)', test_static, timeout : 45)
 
 	# otherwise, just test whatever we are exporting to the superproject
 	else
 		a_test = executable(name, t,
 				include_directories : inc,
 				link_with : nonlibc)
-		test(name_spaced, a_test)
+		test(name_spaced, a_test, timeout : 45)
 	endif
 endforeach
