@@ -23,14 +23,13 @@ pushd ./build-debugoptimized-gcc \
 	&& VALGRIND=1 meson test --wrap="valgrind --leak-check=full --show-leak-kinds=all"
 popd
 
-# build and test sanitizers
+## build and test sanitizers
 #sanitizers="b_sanitize=address b_sanitize=thread" # Nix's clang-4.0.1 has no tsan?
-sanitizers="b_sanitize=address"
-for san in $sanitizers; do
-	type="debugoptimized"
-	name="build-${type}-${san##*=}"
-	CC=clang meson -D$san --buildtype=$type $name \
-		&& pushd $name \
-		&& VALGRIND=1 ninja test
-	popd
-done
+#for san in $sanitizers; do
+#	type="debugoptimized"
+#	name="build-${type}-${san##*=}"
+#	CC=clang meson -D$san --buildtype=$type $name \
+#		&& pushd $name \
+#		&& VALGRIND=1 ninja test
+#	popd
+#done

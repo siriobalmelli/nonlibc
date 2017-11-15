@@ -48,12 +48,7 @@ out:
 			#include <linux/random.h>                                                   
 			#define nlc_urand_(buf, len) \
 				getrandom(buf, len, 0)
-		#else                                                                        
-			#include <sys/syscall.h>                                                    
-			#define nlc_urand_(buf, len) \
-				syscall(SYS_getrandom, buf, len, 0)
 		#endif
-
 	#endif     
 /* TODO: BSD arc4random ? */
 #endif
