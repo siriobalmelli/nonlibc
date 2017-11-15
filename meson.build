@@ -18,12 +18,8 @@ endif
 #	build options by type
 #
 # debug : all the pedantic things!
-if get_option('buildtype') == 'debug'
-  add_project_arguments([ '-DDEBUG' ],
-			language : 'c')
-
 # debugoptimized : daily worker build; basically 'release' but with symbols
-elif get_option('buildtype') == 'debugoptimized'
+if get_option('buildtype') == 'debugoptimized'
   add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer' ],
 			language : 'c')
 
