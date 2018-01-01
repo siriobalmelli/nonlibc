@@ -4,7 +4,7 @@ source $stdenv/setup
 
 PATH=$meson/bin:$python/bin:$PATH
 
-tar -zxvf $src
+#tar -zxvf $src
 
 cd nonlibc
 meson --prefix=$out build
