@@ -29,8 +29,10 @@ if not meson.is_subproject()
 			filebase : meson.project_name(),
 			description : description)
 
-	if host_machine.system() == 'linux'
-		meson.add_install_script('ldconfig', get_option('prefix') + '/' + get_option('libdir'))
+	# Make linking work on linux systems without breaking nix 
+	p = get_option('prefix') 
+	if host_machine.system() == 'linux' and not p.startswith('/nix')
+		meson.add_install_script('ldconfig', p + '/' + get_option('libdir'))
 	endif
 
 # Assume that we export (as a subproject) ONLY a static dependency;
