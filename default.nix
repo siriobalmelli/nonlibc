@@ -1,7 +1,6 @@
-with import <nixpkgs> {};
+{ system ? builtins.currentSystem }:
 
-{ stdenv, cscope, pandoc, gcc, clang, clang-tools, meson, ninja, which, valgrind,
-python3, sudo }:
+with import <nixpkgs> { inherit system; };
 
 stdenv.mkDerivation rec {
 	name = "nonlibc";
@@ -20,8 +19,8 @@ stdenv.mkDerivation rec {
 		python3
 	];
 	src = ./.;
-	buildPhase = "
-		ninja
-		ninja install";
 	inherit meson;
+	buildPhase = "
+		ninja test
+		ninja install";
 }
