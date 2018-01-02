@@ -7,7 +7,7 @@ let
 
   self = {
    
-    nonlibc = callPackage ./nonlibc { };
+    nonlibc = callPackage ./. { };
 
   };
 in
