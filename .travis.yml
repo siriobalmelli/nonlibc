@@ -12,4 +12,5 @@ matrix:
     - os: osx
 
     - os: linux
+      dist: precise
 ...
