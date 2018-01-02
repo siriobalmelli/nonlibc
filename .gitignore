@@ -58,3 +58,4 @@ toolchain/ninja*
 _site/
 Gemfile.lock
 *.pyc
+result*
