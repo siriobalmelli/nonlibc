@@ -1,9 +1,9 @@
-{ system ? builtins.currentSystem }:
+{ system ? builtins.currentSystem, buildtype ? "debug", compiler ? "gcc" }:
 
 with import <nixpkgs> { inherit system; };
 
 stdenv.mkDerivation rec {
-	name = "nonlibc";
+	name = "nonlibc-${buildtype}-${compiler}";
 	env = buildEnv { name = name; paths = nativeBuildInputs; };
 	outputs = [ "out" ];
 	nativeBuildInputs = [
@@ -19,7 +19,11 @@ stdenv.mkDerivation rec {
 		python3
 	];
 	src = ./.;
-	inherit meson;
+	mesonBuildType = "${buildtype}"; 
+	cc = "${compiler}";
+	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec {
+		setupHook = ./mesonHook.sh;
+	});
 	buildPhase = "
 		ninja test
 		ninja install";
