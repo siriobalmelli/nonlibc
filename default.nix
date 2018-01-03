@@ -19,12 +19,19 @@ stdenv.mkDerivation rec {
 		python3
 	];
 	src = ./.;
-	mesonBuildType = "${buildtype}"; 
-	cc = "${compiler}";
 	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec {
-		setupHook = ./mesonHook.sh;
+		setupHook = "";
 	});
-	buildPhase = "
+	configurePhase = ''
+        	mesonFlags="--prefix=$out $mesonFlags"
+    		mesonFlags="--buildtype=${buildtype} $mesonFlags"
+		echo $mesonFlags
+    		CC=${compiler} meson build $mesonFlags
+		cd build
+		''; 
+
+	buildPhase = '' 
 		ninja test
-		ninja install";
+		ninja install
+		'';
 }
