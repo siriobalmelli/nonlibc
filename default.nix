@@ -19,6 +19,8 @@ stdenv.mkDerivation rec {
 		python3
 	];
 	src = ./.;
+	# Override the setupHook in the meson nix derviation,
+	# so that meson doesn't automatically get invoked from there.
 	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec {
 		setupHook = "";
 	});
