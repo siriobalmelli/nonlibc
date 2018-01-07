@@ -1,4 +1,4 @@
-{ system ? builtins.currentSystem, buildtype ? "debug", compiler ? "gcc" }:
+{ system ? builtins.currentSystem, buildtype ? "release", compiler ? "gcc" }:
 
 with import <nixpkgs> { inherit system; };
 

@@ -15,7 +15,7 @@ nonlibc_shared = shared_library(meson.project_name(),
 nonlibc_static = static_library(meson.project_name(),
 			lib_files,
 			include_directories : inc,
-			install : false)
+			install : true)
 
 # We are being built stand-alone,
 #+	so we build shared and generate a pkg-config file.
