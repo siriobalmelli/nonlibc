@@ -6,12 +6,6 @@ description = 'Collection of standard-not-standard utilities for the discerning 
 
 #sanity
 assert(meson.project_name() == 'nonlibc', 'Incorrect project name')
-# pretty much every 'install' parameter
-if not meson.is_subproject()
-	do_install = true
-else
-	do_install = false
-endif
 
 
 #
@@ -34,6 +28,21 @@ elif get_option('buildtype') == 'plain'
   add_project_arguments([ '-DNDEBUG', '-march=core2' ],
 			language : 'c')
 endif
+
+
+# deps
+# deps are either statically or dynamically incorporated;
+#+	see meson_options.txt for the default value, which can be overridden
+#+	with a -Ddep_type=["shared"||"static"] flag when running meson.
+_dep = get_option('dep_type')
+if _dep == 'shared'
+	dep_shared = true
+elif _dep == 'static'
+	dep_shared = false
+else
+	error('-Ddep_type expects "shared" or "static"; got ' + _dep)
+endif
+# insert deps here:
 
 
 inc = include_directories('include')

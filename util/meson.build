@@ -3,7 +3,7 @@
 fnvsum = executable('fnvsum', 'fnvsum.c',
 		include_directories : inc,
 		link_with : nonlibc,
-		install : do_install)
+		install : true)
 
 test('fnvsum test',
 	find_program('test_fnvsum.py'),
@@ -12,7 +12,7 @@ test('fnvsum test',
 ncp = executable('ncp', 'ncp.c',
 		include_directories : inc,
 		link_with : nonlibc,
-		install : do_install)
+		install : true)
 
 test('ncp test',
 	find_program('test_ncp.py'),
