@@ -32,15 +32,6 @@ stdenv.mkDerivation rec {
 	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec {
 		setupHook = "";
 	});
-	configurePhase = ''
-        	mesonFlags="--prefix=$out $mesonFlags"
-    		mesonFlags="--buildtype=${buildtype} $mesonFlags"
-		echo $mesonFlags
-    		CC=${compiler} meson build $mesonFlags
-		cd build
-		''; 
-
-	buildPhase = '' 
 
 	# build
 	mFlags = mesonFlags
