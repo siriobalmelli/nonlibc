@@ -1,7 +1,4 @@
 ---
-# TODO: Travis has Nix-specific infrastructure; but Sirio is not advanced
-#  enough to properly Derive this codebase ... so let there be hacks ;)
-
 language: nix
 
 matrix:
