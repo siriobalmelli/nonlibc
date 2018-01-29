@@ -1,6 +1,6 @@
 { 	system ? builtins.currentSystem,
 	buildtype ? "release",
-	compiler ? "gcc",
+	compiler ? "clang",
 	lib_type ? "shared",
 	dep_type ? "shared",
 	mesonFlags ? ""
