@@ -10,8 +10,9 @@ with import <nixpkgs> { inherit system; };
 
 stdenv.mkDerivation rec {
 	name = "nonlibc";
-	env = buildEnv { name = name; paths = nativeBuildInputs; };
 	outputs = [ "out" ];
+
+	# build-only deps
 	nativeBuildInputs = [
 		(lowPrio gcc)
 		clang
@@ -25,14 +26,20 @@ stdenv.mkDerivation rec {
 		which
 	];
 
+	# runtime deps
+	buildInputs = [];
+
+	# don't harden away position-dependent speedups for static builds
+	hardeningDisable = if lib_type == "static" then 
+		[ "pic" "pie" ]
+	else
+		[];
+
 	# just work with the current directory (aka: Git repo), no fancy tarness
 	src = ./.;
 
-	# Override the setupHook in the meson nix derviation,
-	# so that meson doesn't automatically get invoked from there.
-	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec {
-		setupHook = "";
-	});
+	# Override the setupHook in the meson nix der. - we will config ourselves thanks
+	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
 
 	# build
 	mFlags = mesonFlags
@@ -47,8 +54,8 @@ stdenv.mkDerivation rec {
 		cd build
 		'';
 
-	buildPhase = ''
-		ninja test
-		ninja install
-		'';
+	buildPhase = "ninja";
+	doCheck = true;
+	checkPhase = "ninja test";
+	installPhase = "ninja install";
 }
