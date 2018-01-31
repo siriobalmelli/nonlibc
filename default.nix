@@ -1,9 +1,9 @@
-{ 	system ? builtins.currentSystem,
-	buildtype ? "release",
-	compiler ? "clang",
-	lib_type ? "shared",
-	dep_type ? "shared",
-	mesonFlags ? ""
+{		system ? builtins.currentSystem,
+		buildtype ? "release",
+		compiler ? "clang",
+		lib_type ? "shared",
+		dep_type ? "shared",
+		mesonFlags ? ""
 }:
 
 with import <nixpkgs> { inherit system; };
@@ -29,17 +29,17 @@ stdenv.mkDerivation rec {
 	# runtime deps
 	buildInputs = [];
 
-	# don't harden away position-dependent speedups for static builds
-	hardeningDisable = if lib_type == "static" then 
-		[ "pic" "pie" ]
-	else
-		[];
-
 	# just work with the current directory (aka: Git repo), no fancy tarness
 	src = ./.;
 
 	# Override the setupHook in the meson nix der. - we will config ourselves thanks
 	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
+
+	# don't harden away position-dependent speedups for static builds
+	hardeningDisable = if lib_type == "static" then
+		[ "pic" "pie" ]
+	else
+		[];
 
 	# build
 	mFlags = mesonFlags
