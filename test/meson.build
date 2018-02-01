@@ -16,7 +16,7 @@ foreach t : tests
 
 	a_test = executable(name + '_shared', t,
 			include_directories : inc,
-			link_with : nonlibc_shared)
+			link_with : nonlibc)
 	test(name_spaced + ' (shared)', a_test, timeout : 45)
 
 	test_static = executable(name + '_static', t,
