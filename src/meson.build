@@ -7,41 +7,45 @@ elif host_machine.system() == 'darwin' or host_machine.system() == 'bsd'
   lib_files += 'nmem_bsd.c'
 endif
 
-# Always build both static and shared libraries
+# Always build (and test!) both static and shared libraries, but only INSTALL
+#+	what the caller intends.
+# We rely on the '--default-library' flag of Meson, which defaults to 'shared'
+_lib = get_option('lib_type')
+if _lib == 'shared'
+	lib_shared = true
+elif _lib == 'static'
+	lib_shared = false
+else
+	error('-Dlib_type expects "shared" or "static"; got ' + _lib)
+endif
+
 nonlibc_shared = shared_library(meson.project_name(),
 			lib_files,
 			include_directories : inc,
-			install : true)
+			install : lib_shared)
 nonlibc_static = static_library(meson.project_name(),
 			lib_files,
 			include_directories : inc,
-			install : false)
+			install : not lib_shared)
 
-# We are being built stand-alone,
-#+	so we build shared and generate a pkg-config file.
-if not meson.is_subproject()
-	nonlibc = nonlibc_shared
-	# don't set anything here, rely on variables declared in toplevel file
-	pkg = import('pkgconfig')
-	pkg.generate(libraries : nonlibc,
-			name : meson.project_name(),
-			version : meson.project_version(),
-			filebase : meson.project_name(),
-			description : description)
-
-	if host_machine.system() == 'linux'
-		meson.add_install_script('ldconfig', get_option('prefix') + '/' + get_option('libdir'))
-	endif
-
-# Assume that we export (as a subproject) ONLY a static dependency;
-#+	on the rationale that otherwise this library should be compiled and installed
-#+	(i.e.: `sudo ninja install` from the 'build-release' dir),
-#+	and the superproject will then link to the library using 'pkg-config'.
-# If we were to export a shared library, the superproject ends up installing US
-#+	when it runs `sudo ninja install`; which is probably not the intended
-#	behavior.
-else
+# build shared and generate a pkg-config file.
+if not lib_shared
 	nonlibc = nonlibc_static
-	nonlibc_dep = declare_dependency(link_with : nonlibc,
-					include_directories : inc)
+else
+	nonlibc = nonlibc_shared
+
+	# Make linking work on linux systems without breaking nix 
+	p = get_option('prefix') 
+	if host_machine.system() == 'linux' and not p.startswith('/nix')
+		meson.add_install_script('ldconfig', p + '/' + get_option('libdir'))
+	endif
 endif
+
+# don't set anything here, rely on variables declared in toplevel file
+pkg = import('pkgconfig')
+pkg.generate(libraries : nonlibc,
+		name : meson.project_name(),
+		version : meson.project_version(),
+		filebase : meson.project_name(),
+		description : description)
+nonlibc_dep = declare_dependency(link_with : nonlibc, include_directories : inc)

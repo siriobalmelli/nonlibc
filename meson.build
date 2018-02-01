@@ -7,18 +7,13 @@ description = 'Collection of standard-not-standard utilities for the discerning 
 #sanity
 assert(meson.project_name() == 'nonlibc', 'Incorrect project name')
 
-compiler = meson.get_compiler('c')
 
 #
 #	build options by type
 #
 # debug : all the pedantic things!
-if get_option('buildtype') == 'debug'
-  add_project_arguments([ '-DDEBUG' ],
-			language : 'c')
-
 # debugoptimized : daily worker build; basically 'release' but with symbols
-elif get_option('buildtype') == 'debugoptimized'
+if get_option('buildtype') == 'debugoptimized'
   add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer' ],
 			language : 'c')
 
@@ -35,12 +30,19 @@ elif get_option('buildtype') == 'plain'
 endif
 
 
-# sanitizers
-# work around buggy gcc
-if get_option('b_sanitize') != '' and compiler.get_id() == 'gcc'
-	message('use gold linker for sanitizers')
-	add_project_link_arguments([ '-fuse-ld=gold' ], language : 'c')
+# deps
+# deps are either statically or dynamically incorporated;
+#+	see meson_options.txt for the default value, which can be overridden
+#+	with a -Ddep_type=["shared"||"static"] flag when running meson.
+_dep = get_option('dep_type')
+if _dep == 'shared'
+	dep_shared = true
+elif _dep == 'static'
+	dep_shared = false
+else
+	error('-Ddep_type expects "shared" or "static"; got ' + _dep)
 endif
+# insert deps here:
 
 
 inc = include_directories('include')
