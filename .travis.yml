@@ -4,9 +4,5 @@ language: nix
 matrix:
   include:
     - os: linux
-      dist: trusty
-
     - os: osx
-
-    - os: linux
 ...
