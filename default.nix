@@ -21,6 +21,7 @@ stdenv.mkDerivation rec {
 		meson
 		ninja
 		pandoc
+		pkgconfig
 		python3
 		valgrind
 		which
