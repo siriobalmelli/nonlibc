@@ -11,8 +11,8 @@ nonlibc = shared_library(meson.project_name(),
 			lib_files,
 			include_directories : inc,
 			install : true)
-# Make linking work on linux systems without breaking nix 
-p = get_option('prefix') 
+# Make linking work on linux systems without breaking nix
+p = get_option('prefix')
 if host_machine.system() == 'linux' and not p.startswith('/nix')
 	meson.add_install_script('ldconfig', p + '/' + get_option('libdir'))
 endif
