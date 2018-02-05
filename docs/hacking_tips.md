@@ -5,7 +5,37 @@ order: 3
 
 # Hacking Tips
 
-A few tips about how to hack on this code:
+A quick index of useful concepts for would-be contributors
+	(and myself every few months).
+
+## Grokking the codebase
+
+Set yourself up so you can look up and jump to/from functions/symbols
+	inside your text editor or IDE.
+
+As an example, I use [vim](http://www.vim.org/) with
+	[cscope](http://cscope.sourceforge.net/) support,
+	and you'll see that [bootstrap.py](./bootstrap.py) generates
+	cscope files from the sources.
+
+Then start looking at the example code and related comments in the `test` dir;
+	you'll be able to jump to function definitions/implementations
+	and read their documentation in context with the usage in the test.
+
+Communication is always welcome, feel free to send a pull request
+	or drop me a line at <sirio.bm@gmail.com>.
+
+### You Complete Me
+
+The author uses [YCM](https://github.com/Valloric/YouCompleteMe).
+
+You will notice that the [ycm config file](.ycm_extra_conf.py)
+	contains `compilation_database_folder='./build-debug'`.
+
+A successful build by ninja yields the file `build-debug/compile_commands.json`,
+	which means YCM should pretty much work out-of-the-box.
+
+## Style
 
 -	tabs!
 -	tabs are 8 spaces wide
