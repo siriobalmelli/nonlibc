@@ -1,8 +1,11 @@
-{		system ? builtins.currentSystem,
-		buildtype ? "release",
-		compiler ? "clang",
-		dep_type ? "shared",
-		mesonFlags ? ""
+{	# deps
+	system ? builtins.currentSystem,
+	nixpkgs ? import <nixpkgs> { inherit system; },
+	# options
+	buildtype ? "release",
+	compiler ? "clang",
+	dep_type ? "shared",
+	mesonFlags ? ""
 }:
 
 with import <nixpkgs> { inherit system; };
