@@ -5,16 +5,16 @@
 
 	# options
 	officialRelease ? true,
-	nonlibcSrc ? { outPath= ./.; rev = 0; },	# link to this Git repo
+	nonlibcSrc ? { outPath = ./.; rev = 0; },	# link to this Git repo
 	systems ? [ "x86_64-linux" ]			# systems to build on
 }:
 
 let
 	jobs = rec {
 		build = {
-			nonlibc = nixpkgs.callPackage ./default.nix {
-					inherit system;
-					inherit nixpkgs;
+			nonlibc = import ./default.nix {
+						inherit system;
+						inherit nixpkgs;
 			};
 		};
 	};
