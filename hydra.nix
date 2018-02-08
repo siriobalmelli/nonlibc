@@ -5,8 +5,8 @@
 
 	# options
 	officialRelease ? true,
-	src ? "./.",			# link to this Git repo
-	systems ? [ "x86_64-linux" ]	# systems to build on
+	nonlibcSrc ? { outPath= ./.; rev = 0; },	# link to this Git repo
+	systems ? [ "x86_64-linux" ]			# systems to build on
 }:
 
 let
