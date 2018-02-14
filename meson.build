@@ -44,6 +44,8 @@ else
 endif
 # insert deps here:
 
+deps = [ ]
+
 
 inc = include_directories('include')
 subdir('include')
