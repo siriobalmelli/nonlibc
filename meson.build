@@ -1,11 +1,12 @@
 project('nonlibc', 'c',
-	version : '0.1.8',
+	version : '0.1.9',
 	license : 'GPL2',
 	default_options : [ 'c_std=gnu11' ])
 description = 'Collection of standard-not-standard utilities for the discerning C programmer'
 
 #sanity
 assert(meson.project_name() == 'nonlibc', 'Incorrect project name')
+assert(meson.version() >= '0.44.0', 'unfortuately, rpath issues in previous versions')
 
 
 #
