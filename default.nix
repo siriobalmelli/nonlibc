@@ -51,7 +51,7 @@ stdenv.mkDerivation rec {
 		echo "prefix: $out"
 		CC=${compiler} meson --prefix=$out build $mFlags
 		cd build
-		'';
+	'';
 
 	buildPhase = "ninja";
 	doCheck = true;
