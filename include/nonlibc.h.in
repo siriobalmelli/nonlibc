@@ -26,6 +26,10 @@ Exploit the fact that a '0' bitfield throws a compiler error.
 	struct name { unsigned int bitfield : (expr); }
 
 
+/*	compile-time computation for number of array members
+*/
+#define NLC_ARRAY_LEN(x) (sizeof(x) / sizeof(x[0]))
+
 
 /*	inlining!
 Use this in header files when defining inline functions for use library callers.
