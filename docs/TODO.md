@@ -18,6 +18,7 @@ These are in order by priority:
 		don't try and download it (facepalm)
 -	Move option parsing to Argp ... which likely means meson-wrapping it
 		since it doesn't come standard with LibC on all systems?!
+-	Test functions for `posigs`
 
 ## TODO: lifo
 

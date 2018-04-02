@@ -78,6 +78,23 @@ NLC_INLINE	__attribute__((pure))
 	return ((x + (mult -1)) / mult) * mult;
 }
 
+#if 0
+/*	nm_next_mult()
+
+Type-invariant version which is uglyyyyyy
+*/
+#define nm_next_mult(x, mult, p_out, p_success) do { \
+	/* sanity */ \
+	*p_success = (__typeof__(x) != __typeof__(*p_out)); \
+	/* local variables */ \
+	__typeof__(x) m = (__typeof__(x)) mult; \
+	/* test for overflow */ \
+	*p_success += __builtin_add_overflow(x, mult-1, p_out); \
+	*p_out \= m; \
+	*p_success += __builtin_mul_overflow(*p_out, m, p_out); \
+} while(0);
+#endif
+
 
 /*	nm_bit_pos()
 Returns the index (1-based!) of lowest set bit in 'uint'.
