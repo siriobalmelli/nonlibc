@@ -123,18 +123,27 @@ Can be re-defined at compile-time to use other print facilities.
 Call to predefined Z_PRN, with formatting helper.
 NOTE: if 'errno' is set, it is printed and then RESET.
 */
+#ifndef NDEBUG
 #define	Z_log_(STREAM, LOG_LVL, M, ...) \
-	do { \
-		if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
-			Z_PRN(STREAM, "[%s] %10s:%03d +%-15s\t:: " M "\n", \
-				Z_log_txt[nm_bit_pos(LOG_LVL)], \
-				basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
-			if (errno) { \
-				Z_PRN(STREAM, "\t!errno: %d|%s!\n", errno, strerror(errno)); \
-				errno = 0; \
-			} \
+	if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
+		Z_PRN(STREAM, "[%s] %10s:%03d +%-15s\t:: " M "\n", \
+			Z_log_txt[nm_bit_pos(LOG_LVL)], \
+			basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
+		if (errno) { \
+			Z_PRN(STREAM, "\t!errno: %d|%s!\n", errno, strerror(errno)); \
+			errno = 0; \
 		} \
-	} while (0)
+	}
+/* If NDEBUG (no debugging) is enabled:
+	- elide file, line, function and errno info
+	- avoid logging at all if message is null
+*/
+#else
+#define	Z_log_(STREAM, LOG_LVL, M, ...) \
+	if ((Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) && (M[0] != '\0')) { \
+		Z_PRN(STREAM, M "\n", ##__VA_ARGS__); \
+	}
+#endif
 
 /*	Z_log_line()
 Print a separator line
@@ -163,34 +172,67 @@ static int wrn_cnt = 0;
 /*	Z_log_wrn()
 Increment 'wrn_cnt' when logging a warning.
 */
-#define Z_log_wrn(M, ...) do { \
-			Z_log_(stderr, Z_wrn, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&wrn_cnt, 1, __ATOMIC_RELAXED); \
-			} while(0)
+#define Z_log_wrn(M, ...)\
+	do { \
+		Z_log_(stderr, Z_wrn, M, ##__VA_ARGS__); \
+		__atomic_add_fetch(&wrn_cnt, 1, __ATOMIC_SEQ_CST); \
+	} while(0)
 
 /*	Z_log_err()
 Increment 'err_cnt' when logging an error.
 */
-#define Z_log_err(M, ...) do { \
-			Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_RELAXED); \
-			} while(0)
+#define Z_log_err(M, ...) \
+	do { \
+		Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
+	} while(0)
 
 /*	Z_die()
 Log error, then goto 'out'
 */
-#define Z_die(M, ...) do { \
-			Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_RELAXED); \
-			goto out; \
-		} while(0)
+#define Z_die(M, ...) \
+	do { \
+		Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
+		goto out; \
+	} while(0)
 
 /*	CONDITIONALS
-*/
-#define Z_wrn_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_wrn("(" #A ") " M, ##__VA_ARGS__); }
-#define Z_err_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_err("(" #A ") " M, ##__VA_ARGS__); }
-#define Z_die_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_die("(" #A ") " M, ##__VA_ARGS__); }
+User message M is optional, and if present is printed on a newline.
 
+*/
+#ifndef NDEBUG
+#define Z_wrn_if(A, M, ...) \
+	if (__builtin_expect(A, 0)) { \
+		if (M[0] == '\0') \
+			Z_log_wrn("(" #A ")"); \
+		else \
+			Z_log_wrn("(" #A ")\n\t" M, ##__VA_ARGS__); \
+	}
+#define Z_err_if(A, M, ...) \
+	if (__builtin_expect(A, 0)) { \
+		if (M[0] == '\0') \
+			Z_log_err("(" #A ")"); \
+		else \
+			Z_log_err("(" #A ")\n\t" M, ##__VA_ARGS__); \
+	}
+#define Z_die_if(A, M, ...) \
+	if (__builtin_expect(A, 0)) { \
+		if (M[0] == '\0') \
+			Z_die("(" #A ")"); \
+		else \
+			Z_die("(" #A ")\n\t" M, ##__VA_ARGS__); \
+	}
+
+/* If NDEBUG (no debugging) is enabled:
+	- ONLY print conditionals that have user info attached
+	- DON'T the literal code of the test performed
+*/
+#else
+#define Z_wrn_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_wrn(M, ##__VA_ARGS__); }
+#define Z_err_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_err(M, ##__VA_ARGS__); }
+#define Z_die_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_die(M, ##__VA_ARGS__); }
+#endif
 
 
 /*	Z_start_()
@@ -214,9 +256,9 @@ Static because we want every translation unit to run this separately
 */
 static void __attribute__ ((destructor)) Z_end_()
 {
-	if (err_cnt)
+	if (__atomic_load_n(&err_cnt, __ATOMIC_SEQ_CST))
 		Z_log_(stderr, Z_err, "%s; global err_cnt %d", __BASE_FILE__, err_cnt);
-	if (wrn_cnt)
+	if (__atomic_load_n(&wrn_cnt, __ATOMIC_SEQ_CST))
 		Z_log_(stderr, Z_wrn, "%s; global wrn_cnt %d", __BASE_FILE__, wrn_cnt);
 }
 

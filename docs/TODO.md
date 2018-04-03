@@ -19,6 +19,7 @@ These are in order by priority:
 -	Move option parsing to Argp ... which likely means meson-wrapping it
 		since it doesn't come standard with LibC on all systems?!
 -	Test functions for `posigs`
+-	Handle generated headers in YCM clang completer?
 
 ## TODO: lifo
 
