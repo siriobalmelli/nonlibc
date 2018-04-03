@@ -40,7 +40,8 @@ NLC_INLINE sig_atomic_t	psg_kill_check()
 
 /*	sig setup
 */
-NLC_PUBLIC int psg_sigsetup(void (*handler)(int signum));
+NLC_PUBLIC int __attribute__((warn_unused_result))
+		psg_sigsetup(void (*handler)(int signum));
 
 
 #endif /* posigs_h_ */

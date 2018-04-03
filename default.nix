@@ -41,6 +41,13 @@ stdenv.mkDerivation rec {
 	# don't harden away position-dependent speedups for static builds
 	hardeningDisable = [ "pic" "pie" ];
 
+	# Allow YouCompleteMe and other tooling to see into the byzantine
+	#+	labyrinth of library includes.
+	# TODO: this is a total hack: do the string manipulation in Nix and
+	#+	just export CPATH.
+	# TODO: once cleaned up, back-port to the derivations for nonlibc and memorywell and ffec
+	shellHook=''export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")'';
+
 	# build
 	mFlags = mesonFlags
 		+ " --buildtype=${buildtype}"
