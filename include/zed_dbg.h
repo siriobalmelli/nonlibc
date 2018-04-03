@@ -175,7 +175,7 @@ Increment 'wrn_cnt' when logging a warning.
 */
 #define Z_log_wrn(M, ...) do { \
 			Z_log_(stderr, Z_wrn, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&wrn_cnt, 1, __ATOMIC_RELAXED); \
+			__atomic_add_fetch(&wrn_cnt, 1, __ATOMIC_SEQ_CST); \
 			} while(0)
 
 /*	Z_log_err()
@@ -183,7 +183,7 @@ Increment 'err_cnt' when logging an error.
 */
 #define Z_log_err(M, ...) do { \
 			Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_RELAXED); \
+			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
 			} while(0)
 
 /*	Z_die()
@@ -191,7 +191,7 @@ Log error, then goto 'out'
 */
 #define Z_die(M, ...) do { \
 			Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_RELAXED); \
+			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
 			goto out; \
 		} while(0)
 
@@ -263,9 +263,9 @@ Static because we want every translation unit to run this separately
 */
 static void __attribute__ ((destructor)) Z_end_()
 {
-	if (err_cnt)
+	if (__atomic_load_n(&err_cnt, __ATOMIC_SEQ_CST))
 		Z_log_(stderr, Z_err, "%s; global err_cnt %d", __BASE_FILE__, err_cnt);
-	if (wrn_cnt)
+	if (__atomic_load_n(&wrn_cnt, __ATOMIC_SEQ_CST))
 		Z_log_(stderr, Z_wrn, "%s; global wrn_cnt %d", __BASE_FILE__, wrn_cnt);
 }
 
