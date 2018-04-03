@@ -123,6 +123,7 @@ Can be re-defined at compile-time to use other print facilities.
 Call to predefined Z_PRN, with formatting helper.
 NOTE: if 'errno' is set, it is printed and then RESET.
 */
+#ifndef NDEBUG
 #define	Z_log_(STREAM, LOG_LVL, M, ...) \
 	do { \
 		if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
@@ -135,6 +136,15 @@ NOTE: if 'errno' is set, it is printed and then RESET.
 			} \
 		} \
 	} while (0)
+/* If NDEBUG (no debugging) is enabled; elide file, line, function and errno info */
+#else
+#define	Z_log_(STREAM, LOG_LVL, M, ...) \
+	do { \
+		if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
+			Z_PRN(STREAM, M "\n", ##__VA_ARGS__); \
+		} \
+	} while (0)
+#endif
 
 /*	Z_log_line()
 Print a separator line
@@ -187,28 +197,49 @@ Log error, then goto 'out'
 
 /*	CONDITIONALS
 User message M is optional, and if present is printed on a newline.
+
 */
+#ifndef NDEBUG
 #define Z_wrn_if(A, M, ...) \
 	if (__builtin_expect(A, 0)) { \
-		if (M == "") \
+		if (M[0] == '\0') \
 			Z_log_wrn("(" #A ")"); \
 		else \
 			Z_log_wrn("(" #A ")\n\t" M, ##__VA_ARGS__); \
 	}
 #define Z_err_if(A, M, ...) \
 	if (__builtin_expect(A, 0)) { \
-		if (M == "") \
+		if (M[0] == '\0') \
 			Z_log_err("(" #A ")"); \
 		else \
 			Z_log_err("(" #A ")\n\t" M, ##__VA_ARGS__); \
 	}
 #define Z_die_if(A, M, ...) \
 	if (__builtin_expect(A, 0)) { \
-		if (M == "") \
+		if (M[0] == '\0') \
 			Z_die("(" #A ")"); \
 		else \
 			Z_die("(" #A ")\n\t" M, ##__VA_ARGS__); \
 	}
+
+/* If NDEBUG (no debugging) is enabled:
+	- ONLY print conditionals that have user info attached
+	- DON'T the literal code of the test performed
+*/
+#else
+#define Z_wrn_if(A, M, ...) \
+	if (__builtin_expect(A, 0) && (M[0] != '\0')) { \
+		Z_log_wrn(M, ##__VA_ARGS__); \
+	}
+#define Z_err_if(A, M, ...) \
+	if (__builtin_expect(A, 0) && (M[0] != '\0')) { \
+		Z_log_err(M, ##__VA_ARGS__); \
+	}
+#define Z_die_if(A, M, ...) \
+	if (__builtin_expect(A, 0) && (M[0] != '\0')) { \
+		Z_die(M, ##__VA_ARGS__); \
+	}
+#endif
 
 
 /*	Z_start_()
