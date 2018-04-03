@@ -134,10 +134,13 @@ NOTE: if 'errno' is set, it is printed and then RESET.
 			errno = 0; \
 		} \
 	}
-/* If NDEBUG (no debugging) is enabled; elide file, line, function and errno info */
+/* If NDEBUG (no debugging) is enabled:
+	- elide file, line, function and errno info
+	- avoid logging at all if message is null
+*/
 #else
 #define	Z_log_(STREAM, LOG_LVL, M, ...) \
-	if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
+	if ((Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) && (M[0] != '\0')) { \
 		Z_PRN(STREAM, M "\n", ##__VA_ARGS__); \
 	}
 #endif
