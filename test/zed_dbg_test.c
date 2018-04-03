@@ -23,6 +23,17 @@ const char *__tsan_default_options()
 }
 
 
+/*	fail()
+Simulate Z_die_if control logic, return 1
+*/
+int fail()
+{
+	int err_cnt = 0;
+	Z_die_if(1, "should always fail");
+out:
+	return err_cnt;
+}
+
 
 /*	basic_function()
 
@@ -199,10 +210,12 @@ int main()
 
 	/* Show error handling when calling a "basic" function
 		(which in the UNIX tradition returns 0 on success.
-	Note we assign a return value AND test it at the same time.
+	Note we assign a return value AND test it at the same time
+		and we leave the assignment on it's own line to make this obvious.
 	*/
-	Z_die_if(( res = basic_function() ) != 1,
-		"sum ting willy wong heah");
+	Z_die_if((
+		res = basic_function()
+		) != 1, "sum ting willy wong heah");
 	/* printing an info */
 	Z_log(Z_inf, "res is %d", res);
 
@@ -213,8 +226,9 @@ int main()
 
 	/* malloc (with safety check); then print a buffer */
 	const size_t len = 125;
-	Z_die_if((a_malloc = malloc(len)) == NULL,
-		"len = %zu",
+	Z_die_if(!(
+		a_malloc = malloc(len)
+		), "len = %zu",
 		len);
 	Z_prn_buf(Z_inf, a_malloc, len,
 		"printing buffer len %zu", len);
@@ -223,11 +237,14 @@ int main()
 	disabled_infos();
 	enabled_infos();
 
+	/* test control logic */
+	Z_die_if(!fail(), "should NEVER succeed");
+
 out:
 	/* Regardless of whether function succeeded or not,
 		make sure all things are cleaned up.
 	*/
-	free(a_pointer); /* free(NULL) if perfectly OK */
+	free(a_pointer); /* free(NULL) is perfectly OK */
 	free(a_malloc);
 	return err_cnt;;
 }

@@ -125,25 +125,21 @@ NOTE: if 'errno' is set, it is printed and then RESET.
 */
 #ifndef NDEBUG
 #define	Z_log_(STREAM, LOG_LVL, M, ...) \
-	do { \
-		if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
-			Z_PRN(STREAM, "[%s] %10s:%03d +%-15s\t:: " M "\n", \
-				Z_log_txt[nm_bit_pos(LOG_LVL)], \
-				basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
-			if (errno) { \
-				Z_PRN(STREAM, "\t!errno: %d|%s!\n", errno, strerror(errno)); \
-				errno = 0; \
-			} \
+	if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
+		Z_PRN(STREAM, "[%s] %10s:%03d +%-15s\t:: " M "\n", \
+			Z_log_txt[nm_bit_pos(LOG_LVL)], \
+			basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
+		if (errno) { \
+			Z_PRN(STREAM, "\t!errno: %d|%s!\n", errno, strerror(errno)); \
+			errno = 0; \
 		} \
-	} while (0)
+	}
 /* If NDEBUG (no debugging) is enabled; elide file, line, function and errno info */
 #else
 #define	Z_log_(STREAM, LOG_LVL, M, ...) \
-	do { \
-		if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
-			Z_PRN(STREAM, M "\n", ##__VA_ARGS__); \
-		} \
-	} while (0)
+	if (Z_LOG_LVL & LOG_LVL || LOG_LVL == Z_err) { \
+		Z_PRN(STREAM, M "\n", ##__VA_ARGS__); \
+	}
 #endif
 
 /*	Z_log_line()
@@ -173,27 +169,30 @@ static int wrn_cnt = 0;
 /*	Z_log_wrn()
 Increment 'wrn_cnt' when logging a warning.
 */
-#define Z_log_wrn(M, ...) do { \
-			Z_log_(stderr, Z_wrn, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&wrn_cnt, 1, __ATOMIC_SEQ_CST); \
-			} while(0)
+#define Z_log_wrn(M, ...)\
+	do { \
+		Z_log_(stderr, Z_wrn, M, ##__VA_ARGS__); \
+		__atomic_add_fetch(&wrn_cnt, 1, __ATOMIC_SEQ_CST); \
+	} while(0)
 
 /*	Z_log_err()
 Increment 'err_cnt' when logging an error.
 */
-#define Z_log_err(M, ...) do { \
-			Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
-			} while(0)
+#define Z_log_err(M, ...) \
+	do { \
+		Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
+	} while(0)
 
 /*	Z_die()
 Log error, then goto 'out'
 */
-#define Z_die(M, ...) do { \
-			Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
-			__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
-			goto out; \
-		} while(0)
+#define Z_die(M, ...) \
+	do { \
+		Z_log_(stderr, Z_err, M, ##__VA_ARGS__); \
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
+		goto out; \
+	} while(0)
 
 /*	CONDITIONALS
 User message M is optional, and if present is printed on a newline.
@@ -227,18 +226,9 @@ User message M is optional, and if present is printed on a newline.
 	- DON'T the literal code of the test performed
 */
 #else
-#define Z_wrn_if(A, M, ...) \
-	if (__builtin_expect(A, 0) && (M[0] != '\0')) { \
-		Z_log_wrn(M, ##__VA_ARGS__); \
-	}
-#define Z_err_if(A, M, ...) \
-	if (__builtin_expect(A, 0) && (M[0] != '\0')) { \
-		Z_log_err(M, ##__VA_ARGS__); \
-	}
-#define Z_die_if(A, M, ...) \
-	if (__builtin_expect(A, 0) && (M[0] != '\0')) { \
-		Z_die(M, ##__VA_ARGS__); \
-	}
+#define Z_wrn_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_wrn(M, ##__VA_ARGS__); }
+#define Z_err_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_err(M, ##__VA_ARGS__); }
+#define Z_die_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_die(M, ##__VA_ARGS__); }
 #endif
 
 
