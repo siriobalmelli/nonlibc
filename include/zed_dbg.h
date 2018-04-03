@@ -186,11 +186,29 @@ Log error, then goto 'out'
 		} while(0)
 
 /*	CONDITIONALS
+User message M is optional, and if present is printed on a newline.
 */
-#define Z_wrn_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_wrn("(" #A ") " M, ##__VA_ARGS__); }
-#define Z_err_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_log_err("(" #A ") " M, ##__VA_ARGS__); }
-#define Z_die_if(A, M, ...) if (__builtin_expect(A, 0)) { Z_die("(" #A ") " M, ##__VA_ARGS__); }
-
+#define Z_wrn_if(A, M, ...) \
+	if (__builtin_expect(A, 0)) { \
+		if (M == "") \
+			Z_log_wrn("(" #A ")"); \
+		else \
+			Z_log_wrn("(" #A ")\n\t" M, ##__VA_ARGS__); \
+	}
+#define Z_err_if(A, M, ...) \
+	if (__builtin_expect(A, 0)) { \
+		if (M == "") \
+			Z_log_err("(" #A ")"); \
+		else \
+			Z_log_err("(" #A ")\n\t" M, ##__VA_ARGS__); \
+	}
+#define Z_die_if(A, M, ...) \
+	if (__builtin_expect(A, 0)) { \
+		if (M == "") \
+			Z_die("(" #A ")"); \
+		else \
+			Z_die("(" #A ")\n\t" M, ##__VA_ARGS__); \
+	}
 
 
 /*	Z_start_()
