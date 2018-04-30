@@ -126,7 +126,7 @@ NOTE: if 'errno' is set, it is printed and then RESET.
 			Z_log_txt[nm_bit_pos(LOG_LVL)], \
 			basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 		if (errno) { \
-			Z_PRN(STREAM, "\t!errno: %d|%s!\n", errno, strerror(errno)); \
+			Z_PRN(STREAM, "\t!errno: 0x%02x|%s!\n", errno, strerror(errno)); \
 			errno = 0; \
 		} \
 	}
