@@ -1,4 +1,5 @@
-lib_files = [ 'b2hx.c', 'hx2b.c', 'fnv.c', 'npath.c', 'pcg_rand.c', 'lifo.c', 'posigs.c' ]
+lib_files = [ 'b2hx.c', 'hx2b.c', 'epoll_track.c', 'fnv.c',
+		'npath.c', 'pcg_rand.c', 'lifo.c', 'posigs.c' ]
 
 lib_files += 'nmem.c'
 if host_machine.system() == 'linux'
