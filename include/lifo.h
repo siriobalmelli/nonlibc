@@ -14,7 +14,7 @@ If you need a FIFO (queue):
 -	Do you really NEED a queue?
 	Reworking your algo to use a stack (LIFO) will be faster.
 -	Can your queue have a maximum bound?
-	If so a circular buffer is your best bet. Check out 'cbuf'.
+	If so a circular buffer is your best bet. Check out 'memorywell'.
 -	Otherwise you have a choice between hash tables (e.g. Judy)
 		or (gasp!) a linked list.
 

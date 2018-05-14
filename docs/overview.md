@@ -104,6 +104,10 @@ An example usage is the [ncp](util/ncp.c) utility provided by this library.
 `ncp` re-implements the system `cp` command using this library for zero-copy I/O;
 	and is **>20%** faster than `cp` for large files.
 
+## epoll tracking
+
+TODO
+
 ## other odds-and-ends
 
 -	visibility and inlining macros in [nonlibc.h](include/nonlibc.h)
