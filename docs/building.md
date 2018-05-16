@@ -48,6 +48,7 @@ meson --buildtype debugoptimized build-debug \
 && cd build-debug \
 && ninja test
 ```
+
 ... and if it still won't work, drop me a line at <sirio.bm@gmail.com>.
 
 ## I want to link my program against this library
@@ -199,6 +200,13 @@ nonlibc = dependency('nonlibc', fallback : ['nonlibc', 'nonlibc_dep'])
 executable('demo', 'test.c', dependencies : nonlibc)
 ```
 
+## Cross-platform
+
+Happily builds and tests cleanly on a 32-bit ARM machine running Debian.
+
+We still depend on a bunch of `libc` symbols at link-time, though
+	(oh, the irony).
+
 ## Cross-compilation
 
 Cross compilation is tentatively tested for ARM so far,
@@ -209,9 +217,3 @@ meson --cross-file=toolchain/cross_arm.txt --buildtype=plain build-arm
 cd build-arm
 ninja
 ```
-
-We still depend on a bunch of `libc` symbols at link-time, though
-	(oh, the irony).
-
-A solution for this is in the offing, stay tuned.
-
