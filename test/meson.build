@@ -1,5 +1,6 @@
 tests = [
 	'atop_test.c',
+	'epoll_track_test.c',
 	'fnv_test.c',
 	'hex2bin2hex_test.c',
 	'lifo_test.c',

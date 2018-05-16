@@ -105,7 +105,7 @@ out:
 int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask)
 {
 	int ret = epoll_pwait(tk->epfd, tk->report, tk->rcnt, timeout, sigmask);
-	for (int i=0; ret > 0 && i < err_cnt; i++) {
+	for (int i=0; ret > 0 && i < ret; i++) {
 		struct epoll_track_cb *cb = tk->report[i].data.ptr;
 		cb->callback(cb->fd, cb->events, cb->context);
 	}
