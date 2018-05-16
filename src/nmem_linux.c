@@ -4,6 +4,7 @@
 
 #include <nmem.h>
 #include <zed_dbg.h>
+#include <limits.h> /* PIPE_BUF */
 
 
 /* memfd_create() as a syscall.
@@ -38,7 +39,7 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 			without disk writeback.
 		*/
 		#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
-		out->o_flags = 0;
+		out->o_flags = O_NONBLOCK;
 		char name[16];
 		snprintf(name, 16, "nmem_%zu", out->len);
 		Z_die_if((
@@ -52,14 +53,14 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 
 	/* open an fd */
 	if (tmp_dir) {
-		out->o_flags = O_RDWR | O_TMPFILE;
+		out->o_flags = O_RDWR | O_TMPFILE | O_NONBLOCK;
 		Z_die_if((
 			out->fd = open(tmp_dir, out->o_flags, NMEM_PERMS)
 			) == -1, "failed to open temp file in %s", tmp_dir);
 	}
 
 	/* size and map */
-	Z_die_if(ftruncate(out->fd, out->len), "len=%ld", out->len);
+	Z_die_if(ftruncate(out->fd, out->len), "len=%zu", out->len);
 	Z_die_if((
 		out->mem = mmap(NULL, out->len, PROT_READ | PROT_WRITE, MAP_SHARED, out->fd, 0)
 		) == MAP_FAILED, "map sz %zu fd %"PRId32, out->len, out->fd);
@@ -105,20 +106,28 @@ void nmem_free(struct nmem *nm, const char *deliver_path)
 Splice 'len' bytes from 'fd_pipe_from' into 'nm' at 'offset'.
 Returns number of bytes pushed; which may be less than requested.
 */
-size_t	nmem_in_splice(struct nmem	*nm,
+ssize_t	nmem_in_splice(struct nmem	*nm,
 			size_t		offset,
 			size_t		len,
 			int		fd_pipe_from)
 {
+	ssize_t ret = -1;
 	Z_die_if(!nm || fd_pipe_from < 1, "args");
 
-	ssize_t ret = splice(fd_pipe_from, NULL, nm->fd, (loff_t*)&offset,
+	ret = splice(fd_pipe_from, NULL, nm->fd, (loff_t*)&offset,
 				len, NMEM_SPLICE_FLAGS);
-	Z_die_if(ret < 0, "len %zu", len);
 
-	return ret;
+	/* some systems (ARMv7 that I know of) get finicky - provide a sane fallback */
+	if NLC_UNLIKELY(ret == -1) {
+		if (len > PIPE_BUF)
+			len = PIPE_BUF;
+		ret = read(fd_pipe_from, nm->mem + offset, len);
+	}
+
+	Z_die_if(ret < 0, "len %zu @%zu offt; fd_pipe_from %d -> nm->fd %d",
+			len, offset, fd_pipe_from, nm->fd);
 out:
-	return 0;
+	return ret;
 }
 
 
@@ -126,20 +135,28 @@ out:
 Splice 'len' bytes from 'nm' into 'fd_pipe_to' at 'offset' (if applicable).
 Returns number of bytes pushed; which may be less than requested.
 */
-size_t nmem_out_splice(struct nmem	*nm,
+ssize_t nmem_out_splice(struct nmem	*nm,
 			size_t		offset,
 			size_t		len,
 			int		fd_pipe_to)
 {
+	ssize_t ret = -1;
 	Z_die_if(!nm || fd_pipe_to < 1, "args");
 
-	ssize_t ret = splice(nm->fd, (loff_t*)&offset, fd_pipe_to, NULL,
+	ret = splice(nm->fd, (loff_t*)&offset, fd_pipe_to, NULL,
 				len, NMEM_SPLICE_FLAGS);
-	Z_die_if(ret < 0, "len %zu", len);
 
-	return ret;
+	/* some systems (ARMv7 that I know of) get finicky - provide a sane fallback */
+	if NLC_UNLIKELY(ret == -1) {
+		if (len > PIPE_BUF)
+			len = PIPE_BUF;
+		ret = write(fd_pipe_to, nm->mem + offset, len);
+	}
+
+	Z_die_if(ret < 0, "len %zu @%zu offt; nm->fd %d -> fd_pipe_to %d",
+			len, offset, nm->fd, fd_pipe_to);
 out:
-	return 0;
+	return ret;
 }
 
 
@@ -160,16 +177,18 @@ size_t nmem_cp(struct nmem	*src,
 	if (len > dst->len - dst_offt)
 		len = dst->len - dst_offt;
 
-	int piping[2] = { -1 };
-	Z_die_if(pipe(piping), "");
+	int piping[2] = { -1, -1 };
+	Z_die_if(pipe2(piping, O_NONBLOCK), "");
 
 	/* splicings */
 	for (size_t fd_sz=0; done < src->len; ) {
-		fd_sz = nmem_out_splice(src, done, src->len-done, piping[1]);
+		Z_die_if((
+			fd_sz = nmem_out_splice(src, done, src->len-done, piping[1])
+			) == -1, "");
 		for (size_t temp=0; fd_sz > 0; ) {
-			Z_die_if(!(
+			Z_die_if((
 				temp = nmem_in_splice(dst, done, fd_sz, piping[0])
-				), "");
+				) == -1, "");
 			done += temp;
 			fd_sz -= temp;
 		}

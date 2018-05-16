@@ -86,28 +86,29 @@ out:
 
 /*	nmem_in_splice()
 */
-size_t nmem_in_splice(struct nmem	*nm,
+ssize_t nmem_in_splice(struct nmem	*nm,
      			size_t		offset,
      			size_t		len,
      			int		fd_pipe_from)
 {
+	ssize_t ret = -1;
 	Z_die_if(!nm || fd_pipe_from < 1, "args");
 
-	ssize_t ret = read(fd_pipe_from, nm->mem + offset, len);
+	ret = read(fd_pipe_from, nm->mem + offset, len);
 	Z_die_if(ret < 0, "len %zu", len);
-	return ret;
 out:
-	return 0;
+	return ret;
 }
 
 
 /*	nmem_out_splice()
 */
-size_t nmem_out_splice(struct nmem	*nm,
+ssize_t nmem_out_splice(struct nmem	*nm,
 			size_t		offset,
 			size_t		len,
 			int		fd_pipe_to)
 {
+	ssize_t ret = -1;
 	Z_die_if(!nm || fd_pipe_to < 1, "args");
 
 	/* Owing to DARWIN's inevitable, demoralizing behavior of BLOCKING when
@@ -121,11 +122,10 @@ size_t nmem_out_splice(struct nmem	*nm,
 		len = PIPE_BUF;
 	Z_log(Z_in2, "len %zu; offt %zu", len, offset);
 
-	ssize_t ret = write(fd_pipe_to, nm->mem + offset, len);
+	ret = write(fd_pipe_to, nm->mem + offset, len);
 	Z_die_if(ret < 0, "len %zu", len);
-	return ret;
 out:
-	return 0;
+	return ret;
 }
 
 

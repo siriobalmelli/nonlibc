@@ -56,7 +56,6 @@ dkms.conf
 build*
 toolchain/ninja*
 _site/
-Gemfile.lock
 *.pyc
 .DS_Store
 result*

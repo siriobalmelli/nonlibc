@@ -26,7 +26,7 @@ int		nmem_file(const char *path, struct nmem *out)
 	/* get length */
 	Z_die_if((
 		out->len = lseek(out->fd, 0, SEEK_END)
-		) == -1, "SEEK_END of '%s' gives %ld", path, out->len);
+		) == -1, "SEEK_END of '%s' gives %zu", path, out->len);
 
 	/* mmap file */
 	Z_die_if((

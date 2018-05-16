@@ -9,6 +9,9 @@ tests = [
 	'pcg_rand_test.c',
 	'zed_dbg_test.c'
 ]
+if host_machine.system() == 'linux'
+  tests += 'epoll_track_test.c'
+endif
 
 foreach t : tests
 	name = t.split('.')[0]
