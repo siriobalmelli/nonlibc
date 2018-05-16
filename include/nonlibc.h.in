@@ -60,6 +60,10 @@ You'll keep track of all your functions (and not lose "private/local" functions
 #endif
 
 
+/*	branch hints
+ */
+#define NLC_UNLIKELY(test) (__builtin_expect(test, 0))
+
 
 /*	benchmarking!
 Use these macros to time segments of code, without:
