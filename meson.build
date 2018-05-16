@@ -23,10 +23,10 @@ elif get_option('buildtype') == 'release'
   add_project_arguments([ '-DNDEBUG', '-march=native', '-mtune=native', '-Ofast' ],
 			language : 'c')
 
-# plain : NO flags and an old architecture;
+# plain : NO flags;
 #+	use this to cross check the effect of flags on the other build types.
 elif get_option('buildtype') == 'plain'
-  add_project_arguments([ '-DNDEBUG', '-march=core2' ],
+  add_project_arguments([ '-DNDEBUG' ],
 			language : 'c')
 endif
 
