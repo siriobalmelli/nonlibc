@@ -10,7 +10,7 @@ tests = [
 	'zed_dbg_test.c'
 ]
 if host_machine.system() == 'linux'
-  test += 'epoll_track_test.c'
+  tests += 'epoll_track_test.c'
 endif
 
 foreach t : tests

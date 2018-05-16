@@ -89,7 +89,8 @@ Precisely.
 	#define Z_wr3 0x40
 	#define Z_wr4 0x80
 /* print text corresponding to each log level */
-const static char *Z_log_txt[] = {
+const static char __attribute__((unused))
+*Z_log_txt[] = {
 	"ERR",
 	"INF", "IN2", "IN3", "IN4",
 	"WRN", "WR2", "WR3", "WR4"
