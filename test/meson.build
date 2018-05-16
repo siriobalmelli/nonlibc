@@ -1,6 +1,5 @@
 tests = [
 	'atop_test.c',
-	'epoll_track_test.c',
 	'fnv_test.c',
 	'hex2bin2hex_test.c',
 	'lifo_test.c',
@@ -10,6 +9,9 @@ tests = [
 	'pcg_rand_test.c',
 	'zed_dbg_test.c'
 ]
+if host_machine.system() == 'linux'
+  test += 'epoll_track_test.c'
+endif
 
 foreach t : tests
 	name = t.split('.')[0]

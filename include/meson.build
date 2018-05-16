@@ -13,9 +13,13 @@ conf = configure_file(input : 'nonlibc.h.in',
 ##
 #	headers
 ##
-headers = [ conf, 'atop.h', 'b2hx.h', 'epoll_track.h', 'fnv.h', 'hx2b.h',
-		'lifo.h', 'nmath.h', 'nmem.h', 'nlc_urand.h', 'npath.h',
+headers = [ conf, 'atop.h', 'b2hx.h', 'fnv.h', 'hx2b.h', 'lifo.h',
+		'nmath.h', 'nmem.h', 'nlc_urand.h', 'npath.h',
 		'pcg_rand.h', 'posigs.h', 'zed_dbg.h' ]
+# O/S-specific
+if host_machine.system() == 'linux'
+  headers += 'epoll_track.h'
+endif
 
 # We assume that we will be statically linked if we're a subproject;
 #+	ergo: don't pollute the system with our headers

@@ -1,10 +1,10 @@
-lib_files = [ 'b2hx.c', 'hx2b.c', 'epoll_track.c', 'fnv.c',
-		'npath.c', 'pcg_rand.c', 'lifo.c', 'posigs.c' ]
+lib_files = [ 'b2hx.c', 'hx2b.c', 'fnv.c',
+		'nmem.c', 'npath.c', 'pcg_rand.c', 'lifo.c', 'posigs.c' ]
 
-lib_files += 'nmem.c'
 if host_machine.system() == 'linux'
+  lib_files += 'epoll_track.c'
   lib_files += 'nmem_linux.c'
-elif host_machine.system() == 'darwin' or host_machine.system() == 'bsd'
+elif host_machine.system() == 'darwin' or host_machine.system() == 'freebsd'
   lib_files += 'nmem_bsd.c'
 endif
 
