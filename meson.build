@@ -56,3 +56,12 @@ subdir('src')
 subdir('test')
 subdir('util')
 subdir('man')
+
+deb_pkg = find_program('build_package.sh')
+
+package = custom_target('debian package',
+			build_always : true,
+			depends : [ nonlibc, nonlibc_static ],
+			output : 'nonlibc_0.2.2_armhf.deb',
+			command : deb_pkg)
+
