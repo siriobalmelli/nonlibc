@@ -14,7 +14,12 @@ assert(meson.version() >= '0.44.0', 'unfortuately, rpath issues in previous vers
 #
 # debug : all the pedantic things!
 # debugoptimized : daily worker build; basically 'release' but with symbols
-if get_option('buildtype') == 'debugoptimized'
+if get_option('buildtype') == 'debug'
+  add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer',
+			'-DZ_LOG_LVL=(Z_inf | Z_in2 | Z_wrn | Z_wr2 | Z_err )' ],
+			language : 'c')
+
+elif get_option('buildtype') == 'debugoptimized'
   add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer' ],
 			language : 'c')
 
