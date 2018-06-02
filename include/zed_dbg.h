@@ -74,7 +74,6 @@ Precisely.
 #include <stdint.h>
 
 
-
 /* Log levels as individual bits which can be set/unset independently */
 	/* error - always print this one */
 	#define Z_err 0x00
@@ -106,7 +105,6 @@ In order to get custom log levels for a file,
 #ifndef Z_LOG_LVL
 	#define Z_LOG_LVL (Z_inf | Z_wrn | Z_err)
 #endif
-
 
 
 /* Formatted print function.
@@ -149,7 +147,6 @@ Print a separator line
 #define Z_lne Z_log_line
 
 
-
 /*	Z_log()
 Standard logging function.
 Allows user to specify a log level (e.g.: 'Z_in3') which MUST
@@ -157,7 +154,6 @@ Allows user to specify a log level (e.g.: 'Z_in3') which MUST
 This is so that logging can be selectively enabled/disabled at compile time.
 */
 #define Z_log(LOG_LVL, M, ...) Z_log_(stdout, LOG_LVL, M, ##__VA_ARGS__)
-
 
 
 /* Global tracking of errors and warnings; as a catch-all.
@@ -245,7 +241,6 @@ static void __attribute__ ((constructor)) Z_start_()
 #endif
 
 
-
 /*	Z_end_()
 
 Report errors at program close.
@@ -258,7 +253,6 @@ static void __attribute__ ((destructor)) Z_end_()
 	if (__atomic_load_n(&wrn_cnt, __ATOMIC_SEQ_CST))
 		Z_log_(stderr, Z_wrn, "%s; global wrn_cnt %d", __BASE_FILE__, wrn_cnt);
 }
-
 
 
 /*	Z_prn_buf()

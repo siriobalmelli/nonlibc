@@ -16,7 +16,12 @@ endif
 #
 # debug : all the pedantic things!
 # debugoptimized : daily worker build; basically 'release' but with symbols
-if get_option('buildtype') == 'debugoptimized'
+if get_option('buildtype') == 'debug'
+  add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer',
+			'-DZ_LOG_LVL=(Z_inf | Z_in2 | Z_wrn | Z_wr2 | Z_err )' ],
+			language : 'c')
+
+elif get_option('buildtype') == 'debugoptimized'
   add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer' ],
 			language : 'c')
 
@@ -25,10 +30,10 @@ elif get_option('buildtype') == 'release'
   add_project_arguments([ '-DNDEBUG', '-march=native', '-mtune=native', '-Ofast' ],
 			language : 'c')
 
-# plain : NO flags and an old architecture;
+# plain : NO flags;
 #+	use this to cross check the effect of flags on the other build types.
 elif get_option('buildtype') == 'plain'
-  add_project_arguments([ '-DNDEBUG', '-march=core2' ],
+  add_project_arguments([ '-DNDEBUG' ],
 			language : 'c')
 endif
 

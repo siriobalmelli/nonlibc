@@ -11,11 +11,16 @@ void eptk_free(struct epoll_track *tk, bool close_children)
 		return;
 	if (tk->epfd != -1)
 		close(tk->epfd);
-	for (int i=0; close_children && i < tk->rcnt; i++) {
-		if (tk->cb[i].fd != -1)
-			close(tk->cb[i].fd);
+
+	struct epoll_track_cb *curr = NULL, *e = NULL;
+	/* use _safe_ version: freeing while walking */
+	cds_hlist_for_each_entry_safe_2(curr, e, &tk->cb_list, node) {
+		if (close_children)
+			close(curr->fd);
+		cds_hlist_del(&curr->node);
+		free(curr);
 	}
-	free(tk->cb);
+
 	free(tk->report);
 	free(tk);
 }
@@ -44,56 +49,95 @@ out:
 
 /*	eptk_register()
  * Register a new fd for tracking with epoll.
- * @cb		caller-populated structure containing:
- * @cb->fd	fd to be tracked using epoll
- * @cb->events	events to be tracked, see 'man epoll_ctl'
- * @cb->context	optional opaque value to be passed to callback
- * @cb->callback
+ * @fd		fd to be tracked using epoll
+ * @events	events to be tracked, see 'man epoll_ctl'
+ * @context	optional opaque value to be passed to callback
+ * @callback
  */
-int eptk_register(struct epoll_track *tk, const struct epoll_track_cb *cb)
+int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
+		void (*callback)(int fd, uint32_t events, epoll_data_t context),
+		epoll_data_t context)
 {
 	int err_cnt = 0;
-	Z_die_if(!tk || !cb, "");
-	Z_die_if(!cb->callback, "");
+	int e_flag = EPOLL_CTL_ADD;
+	struct epoll_track_cb *new_cb = NULL;
+	Z_die_if(!tk || fd < 0 || !events || !callback, "");
 
-	/* TODO: look for existing callbacks on the same fd and modify instead */
+	/* look for existing callbacks on the same fd and modify instead */
+	struct epoll_track_cb *curr;
+	cds_hlist_for_each_entry_2(curr, &tk->cb_list, node) {
+		if (curr->fd == fd) {
+			new_cb = curr;
+			e_flag = EPOLL_CTL_MOD;
+			break;
+		}
+	}
 
-	/* extend arrays */
-	size_t alloc_sz = ++tk->rcnt * sizeof(struct epoll_event);
-	Z_die_if(!(
-		tk->report = realloc(tk->report, alloc_sz)
-		), "fail alloc sz %zu", alloc_sz);
-	alloc_sz = tk->rcnt * sizeof(struct epoll_track_cb);
-	Z_die_if(!(
-		tk->cb = realloc(tk->cb, alloc_sz)
-		), "fail alloc sz %zu", alloc_sz);
+	/* if no existing callback found, alloc for a new one */
+	if (!new_cb) {
+		/* extend report array */
+		size_t alloc_sz = ++tk->rcnt * sizeof(struct epoll_event);
+		Z_die_if(!(
+			tk->report = realloc(tk->report, alloc_sz)
+			), "fail alloc sz %zu", alloc_sz);
 
-	/* copy user args, operate on copy */
-	memcpy(&tk->cb[tk->rcnt-1], cb, sizeof(*cb));
-	struct epoll_track_cb *new_cb = &tk->cb[tk->rcnt-1];
+		/* add new callback to list */
+		Z_die_if(!(
+			new_cb = malloc(sizeof(*new_cb))
+			), "fail alloc sz %zu", sizeof(*new_cb));
+	}
 
 	/* register connection */
+	new_cb->fd = fd;
+	new_cb->events = events;
+	new_cb->callback = callback;
+	new_cb->context = context;
 	struct epoll_event ep_in = {
 		.data.ptr = new_cb,
 		.events = new_cb->events
 	};
 	Z_die_if(
-		epoll_ctl(tk->epfd, EPOLL_CTL_ADD, new_cb->fd, &ep_in)
+		epoll_ctl(tk->epfd, e_flag, new_cb->fd, &ep_in)
 		, "epfd %d; register fail for fd %d", tk->epfd, new_cb->fd);
 
+	/* don't add to list until epoll succeeded */
+	if (e_flag == EPOLL_CTL_ADD)
+		cds_hlist_add_head(&new_cb->node, &tk->cb_list);
+	Z_log(Z_in2, "register " EPTK_CB_PRN(new_cb));
+
+	return err_cnt;
 out:
+	/* failed modify must not leave list in an inconsistent state */
+	if (e_flag == EPOLL_CTL_MOD)
+		cds_hlist_del(&new_cb->node);
+	free(new_cb);
 	return err_cnt;
 }
 
 /*	eptk_remove()
-TODO: fuuuu needs RCU linked-list
+ * Remove 'fd' from 'tk'.
+ * Returns number of records removed.
  */
-int eptk_remove(int fd)
+int eptk_remove(struct epoll_track *tk, int fd)
 {
-	int err_cnt = 0;
-	Z_die("removal not implemented");
-out:
-	return err_cnt;
+	if (!tk || fd < 0)
+		return 0;
+
+	/* walk le list */
+	int removed = 0;
+	struct epoll_track_cb *curr = NULL, *e = NULL;
+	cds_hlist_for_each_entry_safe_2(curr, e, &tk->cb_list, node) {
+		if (curr->fd != fd)
+			continue;
+		cds_hlist_del(&curr->node);
+		Z_err_if(
+			epoll_ctl(tk->epfd, EPOLL_CTL_DEL, curr->fd, NULL)
+			, "epfd %d remove fail for fd %d", tk->epfd, curr->fd);
+		removed++;
+		free(curr);
+	}
+
+	return removed;
 }
 
 /*	eptk_pwait_exec()
@@ -104,10 +148,15 @@ out:
  */
 int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask)
 {
+	/* epoll demands that "maxevents argument must be greater than zero" */
+	if (!tk->rcnt)
+		return 0;
+
 	int ret = epoll_pwait(tk->epfd, tk->report, tk->rcnt, timeout, sigmask);
-	for (int i=0; ret > 0 && i < ret; i++) {
+	/* -1 is less than 0 ;) */
+	for (int i=0; i < ret; i++) {
 		struct epoll_track_cb *cb = tk->report[i].data.ptr;
-		cb->callback(cb->fd, cb->events, cb->context);
+		cb->callback(cb->fd, tk->report[i].events, cb->context);
 	}
 	return ret;
 }

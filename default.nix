@@ -30,7 +30,9 @@ stdenv.mkDerivation rec {
 	];
 
 	# runtime deps
-	buildInputs = [];
+	buildInputs = [
+		liburcu
+	];
 
 	# just work with the current directory (aka: Git repo), no fancy tarness
 	src = ./.;
