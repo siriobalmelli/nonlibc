@@ -6,7 +6,9 @@ description = 'Collection of standard-not-standard utilities for the discerning 
 
 #sanity
 assert(meson.project_name() == 'nonlibc', 'Incorrect project name')
-assert(meson.version() >= '0.44.0', 'unfortuately, rpath issues in previous versions')
+if (build_machine.cpu_family() == 'x86_64')
+	assert(meson.version() >= '0.44.0', 'unfortuately, rpath issues in previous versions')
+endif
 
 
 #
@@ -59,3 +61,12 @@ subdir('src')
 subdir('test')
 subdir('util')
 subdir('man')
+
+deb_pkg = find_program('build_package.sh')
+
+package = custom_target('debian package',
+			build_always : true,
+			depends : [ nonlibc, nonlibc_static ],
+			output : 'nonlibc_0.2.2_armhf.deb',
+			command : deb_pkg)
+
