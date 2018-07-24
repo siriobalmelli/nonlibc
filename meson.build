@@ -66,20 +66,22 @@ subdir('man')
 #+  - clean this up, have warnings about 'ar -D' on a macOS+Nix system
 #+  - verify that this approach is correct?? Can't it be simpler??
 #+  - add packaging for other platforms
+#+  - do we NEED the output flag?
 fpm = find_program('fpm', required : false)
 if fpm.found()
+  cmd = [ fpm, '-s', 'dir', '-t', 'deb',
+    '-n', meson.project_name(),
+    '-v', meson.project_version(),
+    nonlibc.full_path() + '=/usr/lib/',
+    nonlibc_static.full_path() + '=/usr/lib/',
+    fnvsum.full_path() + '=/usr/local/bin/',
+    ncp .full_path()+ '=/usr/local/bin/'
+    ]
   deb_pkg = custom_target('deb pkg',
 			  build_by_default : true,
 			  install : false,
 			  depends : [ nonlibc, nonlibc_static, fnvsum, ncp ],
 			  output : 'nonlibc_' + meson.project_version()
 			    + '_' + host_machine.cpu_family() + '.deb',
-			  command : [ fpm, '-s', 'dir', '-t', 'deb',
-			    '-n', meson.project_name(),
-			    '-v', meson.project_version(),
-			    nonlibc.full_path() + '=/usr/lib/',
-			    nonlibc_static.full_path() + '=/usr/lib/',
-			    fnvsum.full_path() + '=/usr/local/bin/',
-			    ncp .full_path()+ '=/usr/local/bin/'
-			    ])
+			  command : cmd)
 endif
