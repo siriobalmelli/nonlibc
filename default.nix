@@ -21,15 +21,13 @@ stdenv.mkDerivation rec {
 	outputs = [ "out" ];
 
 	# build-only deps
+	# TODO: would be nice to replace 'clang' with the value of 'compiler' arg
 	nativeBuildInputs = [
 		clang
-		cscope
 		meson
 		ninja
 		pandoc
 		pkgconfig
-		python3
-		which
 
 		dpkg
 		fpm
