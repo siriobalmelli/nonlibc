@@ -1,5 +1,8 @@
+# NOTE this metadata DUPLICATED in 'default.nix'. We must MANUALLY sync both because:
+#   - The Meson build setup must stand alone adn *not* depend on Nix
+#   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('nonlibc', 'c',
-	version : '0.2.2',
+	version : '0.2.3',
 	license : 'GPL2',
 	default_options : [ 'c_std=gnu11' ])
 description = 'Collection of standard-not-standard utilities for the discerning C programmer'
@@ -55,33 +58,12 @@ endif
 deps = [ ]
 
 
+
+
+
 inc = include_directories('include')
 subdir('include')
 subdir('src')
 subdir('test')
 subdir('util')
 subdir('man')
-
-# TODO:
-#+  - clean this up, have warnings about 'ar -D' on a macOS+Nix system
-#+  - verify that this approach is correct?? Can't it be simpler??
-#+  - add packaging for other platforms
-#+  - do we NEED the output flag?
-fpm = find_program('fpm', required : false)
-if fpm.found()
-  cmd = [ fpm, '-s', 'dir', '-t', 'deb',
-    '-n', meson.project_name(),
-    '-v', meson.project_version(),
-    nonlibc.full_path() + '=/usr/lib/',
-    nonlibc_static.full_path() + '=/usr/lib/',
-    fnvsum.full_path() + '=/usr/local/bin/',
-    ncp .full_path()+ '=/usr/local/bin/'
-    ]
-  deb_pkg = custom_target('deb pkg',
-			  build_by_default : true,
-			  install : false,
-			  depends : [ nonlibc, nonlibc_static, fnvsum, ncp ],
-			  output : 'nonlibc_' + meson.project_version()
-			    + '_' + host_machine.cpu_family() + '.deb',
-			  command : cmd)
-endif

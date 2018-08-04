@@ -12,6 +12,12 @@ with import <nixpkgs> { inherit system; };
 
 stdenv.mkDerivation rec {
 	name = "nonlibc";
+	version = "0.2.3";
+	description = "Collection of standard-not-standard utilities for the discerning C programmer";
+	license = "GPL2";
+	homepage = "https://siriobalmelli.github.io/nonlibc/";
+	maintainers = [ "https://github.com/siriobalmelli" ];
+
 	outputs = [ "out" ];
 
 	# build-only deps
@@ -27,6 +33,11 @@ stdenv.mkDerivation rec {
 		python3
 		valgrind
 		which
+
+		dpkg
+		fpm
+		rpm
+		zip
 	];
 
 	# runtime deps
@@ -65,5 +76,21 @@ stdenv.mkDerivation rec {
 	buildPhase = "ninja";
 	doCheck = true;
 	checkPhase = "ninja test";
-	installPhase = "ninja install";
+	# Build packages _outside_ $out then move them in: fpm seems to ignore
+	#+	the '-x' flag that we need to avoid packaging packages in packages
+	installPhase = ''
+		ninja install
+		mkdir pkgs
+		for pk in "deb" "rpm" "tar" "zip"; do
+			if ! fpm -f -t $pk -s dir -n pkgs/$name -v $version \
+				--license "$license" --description "$description" \
+				--maintainer "$maintainers" --url "$homepage" \
+				"$out/=/"
+			then
+				echo "ERROR (non-fatal): could not build $pk package" >&2
+			fi
+		done
+		mkdir -p $out/var/cache
+		mv -fv pkgs/* $out/var/cache/
+	'';
 }
