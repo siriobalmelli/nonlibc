@@ -21,17 +21,21 @@ stdenv.mkDerivation rec {
 	outputs = [ "out" ];
 
 	# build-only deps
+	# TODO: I would ASSUME that 'compiler' is automatically added as a dependency;
+	#+	alas, this is not so: `nix-shell --argstr compiler gcc --pure`
+	#+	yields an environment where clang is the only available compiler.
+	# WARNING: do not try to include 'fpm' here:
+	#+	- 'ar' on macOS does not support '-D' flag which fpm requires
+	#+	- adding binutils to the install solves 'ar' but now gives:
+	#+		ld: warning: ignoring ... not the architecture being linked (x86_64)
+	#_	... ON an x86_64 machine (logical!)
 	nativeBuildInputs = [
-		(lowPrio gcc)
-		clang
-		clang-tools
 		cscope
 		meson
 		ninja
 		pandoc
 		pkgconfig
 		python3
-		valgrind
 		which
 
 		dpkg
