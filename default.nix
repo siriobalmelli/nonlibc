@@ -1,14 +1,17 @@
-{ # deps
-  system ? builtins.currentSystem,
-  nixpkgs ? import <nixpkgs> { inherit system; },
+{
   # options
   buildtype ? "release",
   compiler ? "clang",
   dep_type ? "shared",
-  mesonFlags ? ""
+  mesonFlags ? "",
+
+  # deps
+  system ? builtins.currentSystem,
+  nixpkgs ? import <nixpkgs> { inherit system; },
+  liburcu ? nixpkgs.liburcu
 }:
 
-with import <nixpkgs> { inherit system; };
+with nixpkgs;
 
 stdenv.mkDerivation rec {
   name = "nonlibc";
@@ -21,9 +24,6 @@ stdenv.mkDerivation rec {
     platforms = platforms.unix;
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
-
-  # TODO: split "packages" and "site" into separate outputs?
-  outputs = [ "out" ];
 
   # TODO: would be nice to replace 'clang' with the value of 'compiler' arg
   buildInputs = [
@@ -38,6 +38,11 @@ stdenv.mkDerivation rec {
     rpm
     zip
   ];
+  # run-time dependencies
+  inherit liburcu;
+
+  # TODO: split "packages" and "site" into separate outputs?
+  outputs = [ "out" ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
   src = ./.;
@@ -60,9 +65,13 @@ stdenv.mkDerivation rec {
       cd build
   '';
 
-  buildPhase = "ninja";
+  buildPhase = ''
+      ninja
+  '';
   doCheck = true;
-  checkPhase = "ninja test";
+  checkPhase = ''
+      ninja test
+  '';
   installPhase = ''
       ninja install
   '';
@@ -89,5 +98,7 @@ stdenv.mkDerivation rec {
   # Allow YouCompleteMe and other tooling to see into the byzantine
   #+	labyrinth of library includes.
   # TODO: this string manipulation ought to be done in Nix.
-  shellHook=''export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")'';
+  shellHook = ''
+      export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")
+  '';
 }
