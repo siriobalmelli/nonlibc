@@ -1,24 +1,21 @@
 #include <stdint.h>
 #include <unistd.h>
 
-#include <epoll_track.h>
 #include <zed_dbg.h>
+#include <epoll_track.h>
 
 #define NUMITER 4096
 #define MSG_LEN 32
-
-static unsigned int rx_count = 0;
-static const uint64_t rx_context = 42;
-
+#define PIPE_COUNT 4
 
 /*	rx_callback()
  */
 void rx_callback(int fd, uint32_t events, epoll_data_t context)
 {
-	Z_die_if(context.u64 != rx_context,
-		"callback expected context %"PRIu64" but received %"PRIu64,
-		rx_context, context.u64);
 	Z_die_if(!events, "events mask not propagated to callback");
+
+	/* accumulator */
+	unsigned int *acc = context.ptr;
 
 	unsigned int buf;
 	int ret;
@@ -26,7 +23,7 @@ void rx_callback(int fd, uint32_t events, epoll_data_t context)
 		ret = read(fd, &buf, sizeof(buf))
 		) != sizeof(buf), "read returns %d", ret);
 	/* accumulate received values - will be checked by main */
-	rx_count += buf;
+	*acc += buf;
 out:
 	return;
 }
@@ -41,23 +38,34 @@ int main()
 	 * in rx_callback() are properly returned as a test failure.
 	 * int err_cnt = 0;
 	 */
-	int pvc[2] = { -1, -1 };
 	struct epoll_track *tk = NULL;
-
-	/* vanilla pipe */
-	Z_die_if(pipe(pvc), "");
+	int pvc[sizeof(int) * PIPE_COUNT * 2];
+	unsigned int counters[sizeof(unsigned int) * PIPE_COUNT] = { 0 };
+	for (int i=0; i < PIPE_COUNT; i++) {
+		pvc[i] = -1;
+		counters[i] = 0;
+	}
 
 	/* create an epoll tracker; register read-end of the pipe for tracking */
 	Z_die_if(!(
 		tk = eptk_new()
 		), "");
-	struct epoll_track_cb cb = {
-		.fd = pvc[0],
-		.events = EPOLLIN, /* not edge-triggered, simply "there is data" */
-		.context.u64 = rx_context,
-		.callback = rx_callback
-	};
-	Z_die_if(eptk_register(tk, &cb), "");
+
+	/* set up each (pipe, callback, counter) tuple */
+	for (int i=0; i < PIPE_COUNT; i++) {
+		Z_die_if(pipe(&pvc[i*2]), "");
+		Z_die_if(eptk_register(tk, pvc[i*2], EPOLLIN, rx_callback,
+					(epoll_data_t){ .ptr = &counters[i] }),
+			"");
+	}
+
+	/* try and register the last one again: should modify the existing one only */
+	Z_die_if(eptk_register(tk, pvc[(PIPE_COUNT-1)*2], EPOLLIN, rx_callback,
+				(epoll_data_t){ .ptr = &counters[(PIPE_COUNT-1)] }),
+		"");
+	Z_die_if(eptk_count(tk) != PIPE_COUNT,
+		"count %zu expected PIPE_COUNT of %d", eptk_count(tk), PIPE_COUNT);
+
 
 	/* test approach:
 	 * push data into the pipe; rely on epoll_tracking infrastructure to
@@ -65,28 +73,42 @@ int main()
 	 */
 	unsigned int total = 0;
 	for (unsigned int i=0; i <  NUMITER; i++) {
-		Z_die_if((
-			write(pvc[1], &i, sizeof(i))
-			) != sizeof(i), "fail write size %zu", sizeof(i));
-		total += i;
+		/* write to all pipes */
+		for (int j=0; j < PIPE_COUNT; j++) {
+			Z_die_if((
+				write(pvc[j*2+1], &i, sizeof(i))
+				) != sizeof(i), "fail write size %zu", sizeof(i));
+			total += i;
+		}
+
 		int ret;
 		/* 1ms timeout: there should always BE data ready for reading;
 		 * any timeout at all is an indication of failure somewhere.
 		 */
 		Z_die_if((
 			ret = eptk_pwait_exec(tk, 1, NULL)
-			) != 1, "pwait returns %d", ret);
+			) != PIPE_COUNT,
+			"pwait %d != PIPE_COUNT %d", ret, PIPE_COUNT);
 	}
 
 	/* rx_callback() should have accumulated identical data to this loop */
-	Z_die_if(total != rx_count,
-		"total %u != rx_count %u", total, rx_count);
+	unsigned int check = 0;
+	for (int i=0; i < PIPE_COUNT; i++)
+		check += counters[i];
+	Z_die_if(total != check,
+		"total %u != check %u", total, check);
+
+	/* delete should return 1 */
+	int ret;
+	Z_die_if((
+		ret = eptk_remove(tk, pvc[0])
+		) != 1, "removed %d instead of 1", ret);
 
 out:
 	eptk_free(tk, false);
-	if (pvc[0] != -1)
-		close(pvc[0]);
-	if (pvc[1] != -1)
-		close(pvc[1]);
+	for (int i=0; i < PIPE_COUNT * 2; i++) {
+		if (pvc[i] != -1)
+			close(pvc[i]);
+	}
 	return err_cnt;
 }

@@ -11,6 +11,8 @@ compilers="clang gcc"
 build_types="debugoptimized release plain"
 
 for cc in $compilers; do
+	if ! which $cc; then break; fi
+
 	for type in $build_types; do
 		name="build-${type}-${cc}"
 		CC=$cc meson --buildtype=$type $name \
