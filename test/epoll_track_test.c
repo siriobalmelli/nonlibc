@@ -53,8 +53,9 @@ int main()
 
 	/* set up each (pipe, callback, counter) tuple */
 	for (int i=0; i < PIPE_COUNT; i++) {
-		Z_die_if(pipe(&pvc[i*2]), "");
-		Z_die_if(eptk_register(tk, pvc[i*2], EPOLLIN, rx_callback,
+		int *curr_pipe = &pvc[i*2];
+		Z_die_if(pipe(curr_pipe), "");
+		Z_die_if(eptk_register(tk, curr_pipe[0], EPOLLIN, rx_callback,
 					(epoll_data_t){ .ptr = &counters[i] }),
 			"");
 	}
