@@ -77,7 +77,7 @@ stdenv.mkDerivation rec {
 		ninja install
 		mkdir pkgs
 		for pk in "deb" "rpm" "tar" "zip"; do
-			if ! fpm -f -t $pk -s dir -n pkgs/$name -v $version \
+			if ! fpm -f -t $pk -s dir -p pkgs/ -n $name -v $version \
 				--license "$license" --description "$description" \
 				--maintainer "$maintainers" --url "$homepage" \
 				"$out/=/"
