@@ -26,8 +26,9 @@ stdenv.mkDerivation rec {
   outputs = [ "out" ];
 
   # TODO: would be nice to replace 'clang' with the value of 'compiler' arg
-  nativeBuildInputs = [
+  buildInputs = [
     clang
+    liburcu
     meson
     ninja
     pandoc
@@ -36,11 +37,6 @@ stdenv.mkDerivation rec {
     fpm
     rpm
     zip
-  ];
-
-  # runtime deps
-  buildInputs = [
-    liburcu
   ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
