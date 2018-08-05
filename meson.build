@@ -58,7 +58,7 @@ deps = [ urcu ]
 
 inc = include_directories('include')
 subdir('include')
-subdir('src')
+subdir('lib')
 subdir('test')
 subdir('util')
 subdir('man')

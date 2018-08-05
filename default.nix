@@ -18,7 +18,7 @@ stdenv.mkDerivation rec {
 	homepage = "https://siriobalmelli.github.io/nonlibc/";
 	maintainers = [ "https://github.com/siriobalmelli" ];
 
-	outputs = [ "out" ];
+	outputs = [ "out" "packages" ];
 
 	# build-only deps
 	# TODO: would be nice to replace 'clang' with the value of 'compiler' arg
@@ -75,9 +75,9 @@ stdenv.mkDerivation rec {
 	#+	the '-x' flag that we need to avoid packaging packages in packages
 	installPhase = ''
 		ninja install
-		mkdir pkgs
 		for pk in "deb" "rpm" "tar" "zip"; do
-			if ! fpm -f -t $pk -s dir -p pkgs/ -n $name -v $version \
+			echo "BUILD TO $packages"
+			if ! fpm -f -t $pk -s dir -p $packages/ -n $name -v $version \
 				--license "$license" --description "$description" \
 				--maintainer "$maintainers" --url "$homepage" \
 				"$out/=/"
@@ -85,7 +85,5 @@ stdenv.mkDerivation rec {
 				echo "ERROR (non-fatal): could not build $pk package" >&2
 			fi
 		done
-		mkdir -p $out/var/cache
-		mv -fv pkgs/* $out/var/cache/
 	'';
 }
