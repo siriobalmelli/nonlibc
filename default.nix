@@ -7,8 +7,7 @@
 
   # deps
   system ? builtins.currentSystem,
-  nixpkgs ? import <nixpkgs> { inherit system; },
-  liburcu ? nixpkgs.liburcu
+  nixpkgs ? import <nixpkgs> { inherit system; }
 }:
 
 with nixpkgs;
@@ -38,8 +37,6 @@ stdenv.mkDerivation rec {
     rpm
     zip
   ];
-  # run-time dependencies
-  inherit liburcu;
 
   # TODO: split "packages" and "site" into separate outputs?
   outputs = [ "out" ];

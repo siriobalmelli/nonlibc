@@ -6,6 +6,7 @@ project('nonlibc', 'c',
 	license : 'LGPL-2.1+',
 	default_options : [ 'c_std=gnu11' ])
 description = 'Collection of standard-not-standard utilities for the discerning C programmer'
+homepage = 'https://siriobalmelli.github.io/nonlibc/'
 
 #sanity
 assert(meson.project_name() == 'nonlibc', 'Incorrect project name')
@@ -54,7 +55,6 @@ endif
 urcu = dependency('liburcu', static: dep_static, required: true)
 
 deps = [ urcu ]
-
 
 inc = include_directories('include')
 subdir('include')
