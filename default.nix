@@ -1,89 +1,97 @@
-{	# deps
-	system ? builtins.currentSystem,
-	nixpkgs ? import <nixpkgs> { inherit system; },
-	# options
-	buildtype ? "release",
-	compiler ? "clang",
-	dep_type ? "shared",
-	mesonFlags ? ""
+{ # deps
+  system ? builtins.currentSystem,
+  nixpkgs ? import <nixpkgs> { inherit system; },
+  # options
+  buildtype ? "release",
+  compiler ? "clang",
+  dep_type ? "shared",
+  mesonFlags ? ""
 }:
 
 with import <nixpkgs> { inherit system; };
 
 stdenv.mkDerivation rec {
-	name = "nonlibc";
-	version = "0.2.3";
-	description = "Collection of standard-not-standard utilities for the discerning C programmer";
-	license = "GPL2";
-	homepage = "https://siriobalmelli.github.io/nonlibc/";
-	maintainers = [ "https://github.com/siriobalmelli" ];
+  name = "nonlibc";
+  version = "0.2.3";
 
-	outputs = [ "out" "packages" ];
+  meta = with stdenv.lib; {
+    description = "Collection of standard-not-standard utilities for the discerning C programmer";
+    homepage = https://siriobalmelli.github.io/nonlibc/;
+    license = licenses.lgpl21Plus;
+    platforms = platforms.unix;
+    maintainers = [ "https://github.com/siriobalmelli" ];
+  };
 
-	# build-only deps
-	# TODO: would be nice to replace 'clang' with the value of 'compiler' arg
-	nativeBuildInputs = [
-		clang
-		meson
-		ninja
-		pandoc
-		pkgconfig
+  # TODO: split "packages" and "site" into separate outputs?
+  outputs = [ "out" ];
 
-		dpkg
-		fpm
-		rpm
-		zip
-	];
+  # TODO: would be nice to replace 'clang' with the value of 'compiler' arg
+  nativeBuildInputs = [
+    clang
+    meson
+    ninja
+    pandoc
+    pkgconfig
+    dpkg
+    fpm
+    rpm
+    zip
+  ];
 
-	# runtime deps
-	buildInputs = [
-		liburcu
-	];
+  # runtime deps
+  buildInputs = [
+    liburcu
+  ];
 
-	# just work with the current directory (aka: Git repo), no fancy tarness
-	src = ./.;
+  # just work with the current directory (aka: Git repo), no fancy tarness
+  src = ./.;
 
-	# Override the setupHook in the meson nix der. - we will config ourselves thanks
-	meson = pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
+  # Override the setupHook in the meson nix der. - will config ourselves thanks
+  meson = pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
 
-	# don't harden away position-dependent speedups for static builds
-	hardeningDisable = [ "pic" "pie" ];
+  # don't harden away position-dependent speedups for static builds
+  hardeningDisable = [ "pic" "pie" ];
 
-	# Allow YouCompleteMe and other tooling to see into the byzantine
-	#+	labyrinth of library includes.
-	# TODO: this is a total hack: do the string manipulation in Nix and
-	#+	just export CPATH.
-	# TODO: once cleaned up, back-port to the derivations for nonlibc and memorywell and ffec
-	shellHook=''export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")'';
+  # build
+  mFlags = mesonFlags
+    + " --buildtype=${buildtype}"
+    + " -Ddep_type=${dep_type}";
+  configurePhase = ''
+      echo "pkgconfig: $PKG_CONFIG_PATH"
+      echo "flags: $mFlags"
+      echo "prefix: $out"
+      CC=${compiler} meson --prefix=$out build $mFlags
+      cd build
+  '';
 
-	# build
-	mFlags = mesonFlags
-		+ " --buildtype=${buildtype}"
-		+ " -Ddep_type=${dep_type}";
-	configurePhase = ''
-		echo "pkgconfig: $PKG_CONFIG_PATH"
-		echo "flags: $mFlags"
-		echo "prefix: $out"
-		CC=${compiler} meson --prefix=$out build $mFlags
-		cd build
-	'';
+  buildPhase = "ninja";
+  doCheck = true;
+  checkPhase = "ninja test";
+  installPhase = ''
+      ninja install
+  '';
 
-	buildPhase = "ninja";
-	doCheck = true;
-	checkPhase = "ninja test";
-	# Build packages _outside_ $out then move them in: fpm seems to ignore
-	#+	the '-x' flag that we need to avoid packaging packages in packages
-	installPhase = ''
-		ninja install
-		for pk in "deb" "rpm" "tar" "zip"; do
-			echo "BUILD TO $packages"
-			if ! fpm -f -t $pk -s dir -p $packages/ -n $name -v $version \
-				--license "$license" --description "$description" \
-				--maintainer "$maintainers" --url "$homepage" \
-				"$out/=/"
-			then
-				echo "ERROR (non-fatal): could not build $pk package" >&2
-			fi
-		done
-	'';
+  # Build packages outside $out then move them in: fpm seems to ignore
+  #+	the '-x' flag that we need to avoid packaging packages inside packages
+  fixupPhase = ''
+      mkdir temp
+      for pk in "deb" "rpm" "tar" "zip"; do
+          if ! fpm -f -t $pk -s dir -p temp/ -n $name -v $version \
+              --description "${meta.description}" \
+              --license "${meta.license.spdxId}" \
+              --url "${meta.homepage}" \
+              --maintainer "${builtins.head meta.maintainers}" \
+              "$out/=/"
+          then
+              echo "ERROR (non-fatal): could not build $pk package" >&2
+          fi
+      done
+      mkdir -p $out/var/cache/packages
+      mv -fv temp/* $out/var/cache/packages/
+  '';
+
+  # Allow YouCompleteMe and other tooling to see into the byzantine
+  #+	labyrinth of library includes.
+  # TODO: this string manipulation ought to be done in Nix.
+  shellHook=''export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")'';
 }
