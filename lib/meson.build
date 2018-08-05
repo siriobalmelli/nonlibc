@@ -8,6 +8,7 @@ elif host_machine.system() == 'darwin' or host_machine.system() == 'freebsd'
   lib_files += 'nmem_bsd.c'
 endif
 
+# TODO: clean up using both_libraries() instead
 nonlibc = shared_library(meson.project_name(),
 			lib_files,
 			include_directories : inc,
@@ -25,13 +26,18 @@ nonlibc_static = static_library(meson.project_name(),
 			dependencies : deps,
 			install : true)
 
-# don't set anything here, rely on variables declared in toplevel file
+# Force install_dir to avoid e.g. lib/x86_64-linux-gnu/pkgconfig on Ubuntu,
+#+ which breaks other tools like Nix.
 pkg = import('pkgconfig')
 pkg.generate(	libraries : [ nonlibc_static, nonlibc ],
+		requires : deps,
+		install_dir : get_option('prefix') + '/lib/pkgconfig',
 		name : meson.project_name(),
-		version : meson.project_version(),
 		filebase : meson.project_name(),
-		description : description)
+		version : meson.project_version(),
+		description : description,
+		url : homepage
+)
 
 
 #   Export a static dependency (straightforward)
