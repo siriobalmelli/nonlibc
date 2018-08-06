@@ -31,6 +31,7 @@ stdenv.mkDerivation rec {
     ninja
     pandoc
     pkgconfig
+    python3
     dpkg
     fpm
     rpm

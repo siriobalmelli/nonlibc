@@ -5,9 +5,12 @@ fnvsum = executable('fnvsum', 'fnvsum.c',
 		dependencies : nonlibc_dep_shared,
 		install : true)
 
-test('fnvsum test',
-	find_program('test_fnvsum.py'),
-	args : fnvsum.full_path())
+test_fnvsum = find_program('test_fnvsum.py', required : false)
+if test_fnvsum.found()
+	test('fnvsum test', test_fnvsum, args : fnvsum.full_path())
+else
+	warning('could not find test script "test_fnvsum.py"')
+endif
 
 
 ncp = executable('ncp', 'ncp.c',
