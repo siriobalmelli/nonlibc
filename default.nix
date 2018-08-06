@@ -14,7 +14,7 @@ with nixpkgs;
 
 stdenv.mkDerivation rec {
   name = "nonlibc";
-  version = "0.2.4";
+  version = "0.2.5";
 
   meta = with stdenv.lib; {
     description = "Collection of standard-not-standard utilities for the discerning C programmer";
@@ -27,15 +27,18 @@ stdenv.mkDerivation rec {
   # TODO: would be nice to replace 'clang' with the value of 'compiler' arg
   buildInputs = [
     clang
-    liburcu
     meson
     ninja
     pandoc
     pkgconfig
+    python3
     dpkg
     fpm
     rpm
     zip
+  ];
+  propagatedBuildInputs = [
+    liburcu
   ];
 
   # TODO: split "packages" and "site" into separate outputs?
@@ -49,6 +52,11 @@ stdenv.mkDerivation rec {
 
   # don't harden away position-dependent speedups for static builds
   hardeningDisable = [ "pic" "pie" ];
+
+  patchPhase = ''
+    patchShebangs util/test_fnvsum.py
+    patchShebangs util/test_ncp.py
+  '';
 
   # build
   mFlags = mesonFlags
@@ -75,7 +83,7 @@ stdenv.mkDerivation rec {
 
   # Build packages outside $out then move them in: fpm seems to ignore
   #+	the '-x' flag that we need to avoid packaging packages inside packages
-  fixupPhase = ''
+  postFixup = ''
       mkdir temp
       for pk in "deb" "rpm" "tar" "zip"; do
           if ! fpm -f -t $pk -s dir -p temp/ -n $name -v $version \
