@@ -53,6 +53,11 @@ stdenv.mkDerivation rec {
   # don't harden away position-dependent speedups for static builds
   hardeningDisable = [ "pic" "pie" ];
 
+  patchPhase = ''
+    patchShebangs util/test_fnvsum.py
+    patchShebangs util/test_ncp.py
+  '';
+
   # build
   mFlags = mesonFlags
     + " --buildtype=${buildtype}"
