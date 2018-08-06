@@ -27,7 +27,6 @@ stdenv.mkDerivation rec {
   # TODO: would be nice to replace 'clang' with the value of 'compiler' arg
   buildInputs = [
     clang
-    liburcu
     meson
     ninja
     pandoc
@@ -36,6 +35,9 @@ stdenv.mkDerivation rec {
     fpm
     rpm
     zip
+  ];
+  propagatedBuildInputs = [
+    liburcu
   ];
 
   # TODO: split "packages" and "site" into separate outputs?

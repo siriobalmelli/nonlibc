@@ -1,5 +1,5 @@
 # NOTE this metadata DUPLICATED in 'default.nix'. We must MANUALLY sync both because:
-#   - The Meson build setup must stand alone adn *not* depend on Nix
+#   - The Meson build setup must stand alone and *not* depend on Nix
 #   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('nonlibc', 'c',
 	version : '0.2.4',
