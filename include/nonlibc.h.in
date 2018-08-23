@@ -1,4 +1,5 @@
 #ifndef nonlibc_h_
+#define nonlibc_h_
 
 /*	nonlibc.h	nonlibc's generic header file
 
@@ -127,5 +128,24 @@ Use these macros to time segments of code, without:
 #define nlc_timing_cpu(timer_name) \
 	((double)cpu_##timer_name / CLOCKS_PER_SEC) /* e.g.: with %.2lf printf() format */
 
-#define nonlibc_h_
+
+/*	NLC_SWAP_EXEC
+
+Atomically exchange the value in 'var' with 'swap';
+	if the exchanged value is different from 'swap', pass it to 'exec'.
+Can be used e.g.: in check()->free() logic looking at shared variables.
+
+var	:	variable name
+swap	:	value e.g. '0' or 'NULL'
+exec	:	function pointer e.g. 'free'
+*/
+#define NLC_SWAP_EXEC(var, swap, exec) { \
+	typeof(var) bits_temp_; \
+	bits_temp_ = (typeof(var))__atomic_exchange_n(&var, (typeof(var))swap, __ATOMIC_ACQUIRE); \
+	if (bits_temp_ != ((typeof(var))swap)) { \
+		exec(bits_temp_); \
+		bits_temp_ = (typeof(var))swap; \
+	} \
+}
+
 #endif /* nonlibc_h_ */

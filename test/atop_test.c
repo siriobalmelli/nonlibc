@@ -1,5 +1,6 @@
 #include <zed_dbg.h>
-#include <atop.h>
+#include <nonlibc.h>
+#include <unistd.h>	/* close */
 #include <stdlib.h>	/* malloc() / free() */
 
 /*	atop_test.c
@@ -36,7 +37,7 @@ void		libw_free(struct libw_widget *wt)
 	if (!wt)
 		return;
 	/* Call close on fd if it's open (aka: not in error state); but only once */
-	ATOP_SWAP_EXEC(wt->fd, -1, close);
+	NLC_SWAP_EXEC(wt->fd, -1, close);
 	/* free struct alloc */
 	free(wt);
 }
@@ -96,8 +97,8 @@ int main()
 	*/
 
 	/* safe cleanup, regardless of status */
-	ATOP_SWAP_EXEC(wt_a, NULL, libw_free);
-	ATOP_SWAP_EXEC(wt_b, NULL, libw_free);
+	NLC_SWAP_EXEC(wt_a, NULL, libw_free);
+	NLC_SWAP_EXEC(wt_b, NULL, libw_free);
 
 	return err_cnt;
 }

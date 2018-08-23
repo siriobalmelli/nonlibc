@@ -13,7 +13,7 @@ conf = configure_file(input : 'nonlibc.h.in',
 ##
 #	headers
 ##
-headers = [ conf, 'atop.h', 'b2hx.h', 'fnv.h', 'hx2b.h', 'lifo.h',
+headers = [ conf, 'b2hx.h', 'fnv.h', 'hx2b.h', 'lifo.h',
 		'nmath.h', 'nmem.h', 'nlc_urand.h', 'npath.h',
 		'pcg_rand.h', 'posigs.h', 'zed_dbg.h' ]
 # O/S-specific
