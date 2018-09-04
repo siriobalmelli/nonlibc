@@ -13,9 +13,12 @@ conf = configure_file(input : 'nonlibc.h.in',
 ##
 #	headers
 ##
-headers = [ conf, 'b2hx.h', 'fnv.h', 'hx2b.h', 'lifo.h',
-		'nmath.h', 'nmem.h', 'nlc_urand.h', 'npath.h',
-		'pcg_rand.h', 'posigs.h', 'zed_dbg.h' ]
+headers = [ conf,
+  'binhex.h', 'b2hx.h', 'hx2b.h', 
+  'fnv.h', 'lifo.h',
+  'nmath.h', 'nmem.h', 'nlc_urand.h', 'npath.h',
+  'pcg_rand.h', 'posigs.h', 'zed_dbg.h'
+]
 # O/S-specific
 if host_machine.system() == 'linux'
   headers += 'epoll_track.h'

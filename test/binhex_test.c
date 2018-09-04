@@ -7,8 +7,7 @@ These functions can be used to parse and generate hexadecimal strings,
 (c) 2017 Sirio Balmelli; https://b-ad.ch
 */
 
-#include <hx2b.h>
-#include <b2hx.h>
+#include <binhex.h>
 #include "zed_dbg.h"
 
 

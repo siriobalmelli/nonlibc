@@ -1,7 +1,7 @@
 tests = [
 	'atop_test.c',
 	'fnv_test.c',
-	'hex2bin2hex_test.c',
+	'binhex_test.c',
 	'lifo_test.c',
 	'nlc_urand_test.c',
 	'nmath_test.c',
