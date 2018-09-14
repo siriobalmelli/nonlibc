@@ -15,6 +15,9 @@ if (build_machine.cpu_family() == 'x86_64')
 endif
 
 
+# whole-project build flags
+add_project_arguments([ '-D_FORTIFY_SOURCE=2' ], language : 'c')
+
 #
 #	build options by type
 #
