@@ -28,6 +28,7 @@ void eptk_free(struct epoll_track *tk, bool close_children)
 /*	eptk_new()
  * Initial allocation of tracking structure for an epoll group/fd;
  * to track a fd, register it with eptk_register()
+ * Returns NULL on error
  */
 struct epoll_track *eptk_new()
 {
@@ -53,6 +54,7 @@ out:
  * @events	events to be tracked, see 'man epoll_ctl'
  * @context	optional opaque value to be passed to callback
  * @callback
+ * Returns 0 on success
  */
 int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
 		void (*callback)(int fd, uint32_t events, epoll_data_t context),

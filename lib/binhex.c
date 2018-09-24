@@ -150,7 +150,7 @@ const char *hex_burn_leading(const char *hex)
 		hex += 2;
 	else if (hex[0] == 'x' || hex[0] == 'h')
 		hex++;
-	return hex;	
+	return hex;
 }
 
 
