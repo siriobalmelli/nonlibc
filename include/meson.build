@@ -14,6 +14,7 @@ headers = [ 'nonlibc.h',
 
     'fnv.h',
     'lifo.h',
+    'messenger.h',
     'nlc_urand.h',
     'nmath.h',
     'nmem.h',
