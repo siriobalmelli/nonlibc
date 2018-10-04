@@ -1,4 +1,5 @@
-lib_files = [ 'binhex.c', 'fnv.c', 'nmem.c', 'npath.c', 'pcg_rand.c', 'lifo.c', 'posigs.c' ]
+lib_files = [ 'binhex.c', 'fnv.c', 'messenger.c', 'nmem.c', 'npath.c',
+  'pcg_rand.c', 'lifo.c', 'posigs.c' ]
 
 if host_machine.system() == 'linux'
   lib_files += 'epoll_track.c'

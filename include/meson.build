@@ -15,7 +15,7 @@ conf = configure_file(input : 'nonlibc.h.in',
 ##
 headers = [ conf,
   'binhex.h', 'b2hx.h', 'hx2b.h', 
-  'fnv.h', 'lifo.h',
+  'fnv.h', 'lifo.h', 'messenger.h',
   'nmath.h', 'nmem.h', 'nlc_urand.h', 'npath.h',
   'pcg_rand.h', 'posigs.h', 'zed_dbg.h'
 ]
