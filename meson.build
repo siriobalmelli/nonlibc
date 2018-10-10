@@ -56,8 +56,9 @@ if _dep == 'static'
 endif
 # insert deps here:
 urcu = dependency('liburcu', static: dep_static, required: true)
+pthread = dependency('threads', static: true)
 
-deps = [ urcu ]
+deps = [ urcu, pthread ]
 
 inc = include_directories('include')
 subdir('include')

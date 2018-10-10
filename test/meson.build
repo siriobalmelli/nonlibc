@@ -7,8 +7,10 @@ tests = [
 	'nmath_test.c',
 	'npath_test.c',
 	'pcg_rand_test.c',
-	'zed_dbg_test.c'
+	'zed_dbg_test.c',
+	'messenger_test.c'
 ]
+
 if host_machine.system() == 'linux'
   tests += 'epoll_track_test.c'
 endif
@@ -19,11 +21,13 @@ foreach t : tests
 
 	a_test = executable(name + '_shared', t,
 			include_directories : inc,
+			dependencies : deps,
 			link_with : nonlibc)
 	test(name_spaced + ' (shared)', a_test, timeout : 45)
 
 	test_static = executable(name + '_static', t,
 			include_directories : inc,
+			dependencies : deps,
 			link_with : nonlibc_static)
 	test(name_spaced + ' (static)', test_static, timeout : 45)
 endforeach

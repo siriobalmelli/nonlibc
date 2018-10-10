@@ -7,17 +7,6 @@
  */
 NLC_ASSERT(mg_size_sanity, INT_FAST16_MAX > PIPE_BUF);
 
-struct message {
-union{
-struct {
-	uint_fast16_t	len;
-	uint8_t		data[];
-};
-	uint8_t		bytes[PIPE_BUF];
-};
-};
-
-
 /* macrofy it so that we don't rewrite this for mgrp_broadcast()
  * or (heaven forbid) do a new "assembly" for each target of the broadcast.
  */
