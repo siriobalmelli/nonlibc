@@ -3,12 +3,12 @@ tests = [
 	'fnv_test.c',
 	'binhex_test.c',
 	'lifo_test.c',
+	'messenger_test.c',
 	'nlc_urand_test.c',
 	'nmath_test.c',
 	'npath_test.c',
 	'pcg_rand_test.c',
-	'zed_dbg_test.c',
-	'messenger_test.c'
+	'zed_dbg_test.c'
 ]
 
 if host_machine.system() == 'linux'
