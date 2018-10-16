@@ -23,11 +23,11 @@ foreach t : tests
 			include_directories : inc,
 			dependencies : deps,
 			link_with : nonlibc)
-	test(name_spaced + ' (shared)', a_test, timeout : 45)
+	#test(name_spaced + ' (shared)', a_test, timeout : 45)
 
 	test_static = executable(name + '_static', t,
 			include_directories : inc,
 			dependencies : deps,
 			link_with : nonlibc_static)
-	test(name_spaced + ' (static)', test_static, timeout : 45)
+	#test(name_spaced + ' (static)', test_static, timeout : 45)
 endforeach
