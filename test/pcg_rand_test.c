@@ -10,6 +10,7 @@ For all the 411, see 'pcg_rand.h'
 (c)2017 Sirio Balmelli; https://b-ad.ch
 */
 
+#include <fnv.h>
 #include <pcg_rand.h>
 #include <zed_dbg.h>
 #include <stdlib.h> /* free() */
