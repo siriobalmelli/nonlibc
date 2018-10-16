@@ -1,243 +1,148 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <pthread.h>
-#include <sys/epoll.h>
 #include <zed_dbg.h>
-#include <epoll_track.h>
-#include <posigs.h>
-#include <time.h>
+#include <posigs.h> /* use atomic PSG kill flag as inter-thread err_cnt */
 #include <fnv.h>
 #include <pcg_rand.h>
+#include <sched.h> /* sched_yield() */
 #include <messenger.h>
+#include <pthread.h>
 
-/* Sirio:
-TODO:	-  this test doesn't exit as its an epoll loop
-	-  you'll see that I had to do funky stuff to add pthreads as 
-		a dependency for the pkgconfig not to barf when meson 
-		tries to build.
-		The dependency 'pthread' defined in 'meson.build' cannot be added
-		in 'lib/meson.build' to the pkgconfig.generate, you have to provide
-		the raw '-pthreads' string there.
-*/
+#define THREAD_CNT 4
+#define ITERS 5000 /* how many messages each thread should send */
 
-uint64_t *data[2] = { NULL, NULL };
+static uint64_t tx_hash[THREAD_CNT] = { 0 };
+static uint64_t rx_hash[THREAD_CNT] = { 0 };
+static int contended[2] = { -1 };
 
-struct thread_data {
-	int idx;	/* Index into the 'data' array */
-	int write_fd;
+/* send this over the wire */
+struct blob {
+	unsigned int thread_id;
+	size_t len;
+	uint8_t bytes[];
 };
-/*	write_thread()
- *	Generate blobs of random bytes, hash them, add all hashes and send
- *	each blob over pipe.
- *	'ptr' is the pipe fd.
- */
-void* write_thread(void* ptr)
-{
-	Z_log(Z_inf, "write_thread");
-	struct thread_data *td = ptr;
-	int fd = td->write_fd;
-	/* Generate a number of random bytes between 1 and MG_MAX 
-		and generate an fnv hash.
-	Do this x number of times and add all hashes together. 
-	 Return the final hash to the caller. */	
 
-	uint64_t ret_hash = 0;
-	/* Generate a random len for the number of bytes to be generated
-		between 0 - MG_MAX */	
+/* tx_thread()
+ * Generate messages containing variable amounts of random bytes,
+ * send them over the fd,
+ * add their hash to our tx_hash.
+ *
+ * @arg : main() should provide us with our thread ID
+ */
+void *tx_thread(void* arg)
+{
+	int err_cnt = 0;
+	struct blob *header = NULL;
+	Z_die_if(!(
+		header = malloc(MG_MAX)
+		), "MG_MAX %zu", MG_MAX);
+	header->thread_id = (unsigned int)arg;
+	Z_log(Z_inf, "tx %u", header->thread_id);
+
+	/* Generate variable-sized messages,
+	 * up to the maximum number of bytes that
+	 * this platform guarantees will be sent atomically.
+	 */
+	size_t max_len = MG_MAX - sizeof(struct blob);
+
+	/* initialize fnv1a hash */
+	uint64_t *hash = &tx_hash[header->thread_id];
+	*hash = fnv_hash64(NULL, NULL, 0);
+
+	/* seed RNG */
 	struct pcg_state rnd;
 	pcg_seed_static(&rnd);
-	printf("idx %d\r\n", td->idx);
-	Z_die_if(!(
-		data[td->idx] = malloc(PIPE_BUF)
-		), "");
 
-	/* Generate blobs and send */
-	for (int x = 0; x < 5; x++) {
-		uint32_t len = pcg_rand_bound(&rnd, MG_MAX);
-		Z_log(Z_inf, "len %d", len);
-
-		uint64_t seed1 = time(NULL);
-		uint64_t seed2 = time(NULL);	
-
-		pcg_randset(data[td->idx], len, seed1, seed2); 
-
+	/* generate ITERS messages, of random length each,
+	 * hashing each one, then sending
+	 */
+	for (int x = 0; x < ITERS; x++) {
+		header->len = pcg_rand_bound(&rnd, max_len);
+		pcg_set(&rnd, header->bytes, header->len);
+		*hash = fnv_hash64(hash, header->bytes, header->len); 
 		/* Zero out everything after len in data */
-		memset(data[td->idx] + len, 0, PIPE_BUF - len - 1);
+		//memset(&header->bytes[header->len], 0, max_len - header->len);
 
-		/* Fnv hash*/
-		uint64_t hash = 0;
-		hash = fnv_hash64(&hash, data[td->idx], PIPE_BUF); 
-
-		ret_hash += hash;
-
-	//	printf("hash %lx\r\n", hash);
 		/* Send the data */
-		mg_send(fd, data[td->idx], len);
-		
-		/* Zero out the buffer */
-		memset(data[td->idx], 0, PIPE_BUF);
+		size_t send_len = sizeof(struct blob) + header->len;
+		ssize_t ret = mg_send(contended[1], header, send_len);
+		Z_die_if(ret != send_len, "");
 	}
-	printf("Write hash %lx\r\n", ret_hash);
-	Z_log(Z_inf, "end write_thread");
-
-	printf("idx %d\r\n", td->idx);
-	if (data[td->idx] != NULL) {
-		free(data[td->idx]);
-		data[td->idx] = NULL;
-	}
-	return (void*)ret_hash;
 out:
-	if (data[td->idx]) {
-		free(data[td->idx]);
-		data[td->idx] = NULL;
-	}
-	Z_log(Z_inf, "error write_thread");
+	free(header);
+	if (err_cnt)
+		psg_kill();
 	return NULL;
 }
 
-uint64_t *data_out[2] = { NULL, NULL };
-/*	messenger_callback()
- *	Callback from epoll tracker to read blobs coming into pipe defined 
- *	by 'fd'.
- *	Read each blob and hash, accumulate all hashes.
-*/
-void messenger_callback(int fd, uint32_t events, epoll_data_t context)
+
+/* rx_thread()
+ * Receive messages containing variable amounts of random bytes,
+ * hash them into the correct rx_hash for that sender.
+ */
+void *rx_thread(void* arg)
 {
-	struct thread_data *td = context.ptr;
-	Z_log(Z_inf, "read_thread");
-	static uint64_t ret_hash = 0;
+	int err_cnt = 0;
 
-	/* Create PIP_BUF size memory area for reading data into. */
+	/* Receive variable-sized messages,
+	 * up to the maximum number of bytes that
+	 * this platform guarantees will be sent atomically.
+	 */
+	struct blob *header = NULL;
 	Z_die_if(!(
-		data_out[td->idx] = malloc(PIPE_BUF)
-		), "");
+		header = malloc(MG_MAX)
+		), "MG_MAX %zu", MG_MAX);
 
-	/* Zero out 'data_out' so that any unused space is zero as in the
-		writer threads. */
-	
-	memset(data_out[td->idx], 0, PIPE_BUF);
+	/* init rx hashes */
+	for (int i=0; i < THREAD_CNT; i++)
+		rx_hash[i] = fnv_hash64(NULL, NULL, 0);
 
-	int len = mg_recv(fd, data_out[td->idx]);
-
-	uint64_t hash = 0;
-	/* Fnv hash */
-	hash = fnv_hash64(&hash, data_out[td->idx], PIPE_BUF); 
-//	printf("hash %lx\r\n", hash);
-
-	if (data_out[td->idx]) {
-		free(data_out[td->idx]);
-		data_out[td->idx] = NULL;
+	int x = 0;
+	for (; x < ITERS * THREAD_CNT && !psg_kill_check(); x++) {
+		/* may return no bytes or an error (-1) */
+		ssize_t ret;
+		while ((ret = mg_recv(contended[0], header) < 1))
+			sched_yield();
+		uint64_t *hash = &rx_hash[header->thread_id];
+		*hash = fnv_hash64(hash, header->bytes, header->len);
 	}
-	ret_hash += hash;
-	printf("Read hash %lx\r\n", ret_hash);
-	Z_log(Z_inf, "end read_thread");
-
-	return;
+	Z_err_if(x != ITERS * THREAD_CNT, "");
 out:
-	if (data_out[td->idx] != NULL) {
-		free(data_out[td->idx]);
-		data_out[td->idx] = NULL;
-	}
-	Z_log(Z_inf, "error read_thread");
+	free(header);
+	if (err_cnt)
+		psg_kill();
+	return NULL;
 }
+
 
 int main()
 {
-	pthread_t wthread1, wthread2;
-	struct thread_data *td1 = NULL;
-	struct epoll_track *tk = NULL;
-	int pvc[2] = {-1};
-	int pvc2[2] = {-1};
+	int err_cnt = 0;
 
-	Z_die_if((
-		psg_sigsetup(NULL)
-		), "");
+	pthread_t txes[THREAD_CNT];
+	pthread_t rx;
 
-	Z_die_if(!(
-		tk = eptk_new()
-		), "");	
+	Z_die_if(pipe(contended), "");
 
-	Z_die_if((
-		pipe(pvc) != 0 
-		), "");	
-
-	Z_die_if((
-		pipe(pvc2) != 0 
-		), "");	
-
-	Z_die_if(!(
-		td1 = malloc(sizeof(struct thread_data))
-		), "");
-	td1->idx = 0;
-	td1->write_fd = pvc[1];
-
-	/* Register with epoll tracker */
-	struct epoll_track_cb cb = {
-		.fd = pvc[0],
-		.events = EPOLLIN,
-		.context.ptr = td1,
-		.callback = messenger_callback
-	};
-
-	Z_die_if(eptk_register(tk, cb.fd, cb.events, cb.callback, cb.context), "");
-
-	/* Register with epoll tracker */
-	struct epoll_track_cb cb1 = {
-		.fd = pvc2[0],
-		.events = EPOLLIN,
-		.context.ptr = NULL,
-		.callback = messenger_callback
-	};
-
-	Z_die_if(eptk_register(tk, cb1.fd, cb1.events, cb1.callback, cb1.context), "");
-
-	Z_die_if((
-		pthread_create(&wthread1, NULL, write_thread, (void*)td1)
-		), "");
-#if 0
-	struct thread_data *td2 = NULL;
-	Z_die_if(!(
-		td2 = malloc(sizeof(struct thread_data))
-		), "");
-	td2->idx = 0;
-	td2->write_fd = pvc2[1];
-	Z_die_if((
-		pthread_create(&wthread2, NULL, write_thread, (void*)td2)
-		), "");
-#endif
-#if 1 
-	while (!psg_kill_check()) {
-		int res = eptk_pwait_exec(tk, -1, NULL);
-
-		if (res == -1) {
-			switch (errno) {
-				case EINTR:
-					continue;
-				default:
-					Z_die("eptk_pwait_exec()");
-			}
-		}
+	/* run all threads */
+	for (uintptr_t i=0; i < THREAD_CNT; i++) {
+		Z_die_if(pthread_create(&txes[i], NULL, tx_thread, (void *)i), "");
 	}
-#endif
-	close(pvc[0]);
-	close(pvc[1]);
-	close(pvc2[0]);
-	close(pvc2[1]);
-	eptk_free(tk, false);
-	free(td1);
-	return 0;
+	Z_die_if(pthread_create(&rx, NULL, rx_thread, NULL), "");
+
+	for (int i=0; i < THREAD_CNT; i++)
+		Z_die_if(pthread_join(txes[i], NULL), "");
+	Z_die_if(pthread_join(rx, NULL), "");
+
+	/* test results */
+	for (int i=0; i < THREAD_CNT; i++)
+		Z_err_if(tx_hash[i] != rx_hash[i], "thread %d", i);
+
 out:
-	if (pvc[0] != -1)
-		close(pvc[0]);
-	if (pvc[1] != -1)
-		close(pvc[1]);
-	if (pvc2[0] != -1)
-		close(pvc2[0]);
-	if (pvc2[1] != -1)
-		close(pvc2[1]);
-	if (tk)
-		eptk_free(tk, false);
-	if (td1)
-		free(td1);
-	return 1;
+	if (contended[0] != -1)
+		close(contended[0]);
+	if (contended[1] != -1)
+		close(contended[1]);
+
+	/* return any error from any thread */
+	err_cnt += psg_kill_check();
+	return err_cnt;
 }

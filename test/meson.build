@@ -3,6 +3,7 @@ tests = [
 	'fnv_test.c',
 	'binhex_test.c',
 	'lifo_test.c',
+	'messenger_test.c',
 	'nlc_urand_test.c',
 	'nmath_test.c',
 	'npath_test.c',
@@ -11,8 +12,7 @@ tests = [
 ]
 
 if host_machine.system() == 'linux'
-  tests += ['epoll_track_test.c',
-	    'messenger_test.c']
+  tests += ['epoll_track_test.c']
 endif
 
 # pthread dependency only for tests, not for the library itself

@@ -40,7 +40,6 @@ struct {
 };
 
 /* pipe() only guarantees atomicity for PIPE_BUF bytes */
-/* TODO: doing '- sizeof(struct message)' makes MG_MAX always equal to 0 */
 #define MG_MAX (PIPE_BUF - (sizeof(uint_fast16_t)))
 
 ssize_t mg_send(int to_fd, void *data, size_t len);
