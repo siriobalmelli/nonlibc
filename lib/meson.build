@@ -1,9 +1,10 @@
-lib_files = [ 'binhex.c', 'fnv.c', 'messenger.c', 'nmem.c', 'npath.c',
+lib_files = [ 'binhex.c', 'fnv.c', 'nmem.c', 'npath.c',
   'pcg_rand.c', 'lifo.c', 'posigs.c' ]
 
 if host_machine.system() == 'linux'
-  lib_files += 'epoll_track.c'
-  lib_files += 'nmem_linux.c'
+  lib_files += ['epoll_track.c',
+		'messenger.c',
+	        'nmem_linux.c']
 elif host_machine.system() == 'darwin' or host_machine.system() == 'freebsd'
   lib_files += 'nmem_bsd.c'
 endif
