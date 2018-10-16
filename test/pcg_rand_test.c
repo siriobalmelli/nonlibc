@@ -49,11 +49,17 @@ int test_pcg_randset()
 	int err_cnt = 0;
 
 	const size_t len = 87694;
-	void *mem = malloc(len);
+	void *mem_a = malloc(len);
+	void *mem_b = malloc(len);
 
-	pcg_randset(mem, len, PCG_RAND_S1, PCG_RAND_S2);
+	pcg_randset(mem_a, len, PCG_RAND_S1, PCG_RAND_S2);
+	pcg_randset(mem_b, len, PCG_RAND_S1, PCG_RAND_S2);
 
-	free(mem);
+	Z_err_if(fnv_hash64(NULL, mem_a, len) != fnv_hash64(NULL, mem_b, len),
+		"hash mismatch for pcg_randset()");
+
+	free(mem_a);
+	free(mem_b);
 	return err_cnt;
 }
 
