@@ -21,6 +21,7 @@ These are in order by priority:
 		since it doesn't come standard with LibC on all systems?!
 -	Test functions for `posigs`
 -	Handle generated headers in YCM clang completer?
+-	compilation: ThinLTO
 
 ## TODO: lifo
 

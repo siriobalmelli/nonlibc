@@ -22,15 +22,25 @@
 #include <unistd.h>
 #include <limits.h> /* PIPE_BUF */
 #include <stdlib.h>
-
+#include <stddef.h>
 /*
  *	message passing functions
  * NOTE: these are orthogonal to mg_subscribe/unsubscribe/alert (messenger)
  * semantics below/
  */
 
+struct message {
+union{
+struct {
+	uint_fast16_t	len;
+	uint8_t		data[];
+};
+	uint8_t		bytes[PIPE_BUF];
+};
+};
+
 /* pipe() only guarantees atomicity for PIPE_BUF bytes */
-#define MG_MAX (PIPE_BUF - sizeof(struct message))
+#define MG_MAX (PIPE_BUF - (sizeof(uint_fast16_t)))
 
 ssize_t mg_send(int to_fd, void *data, size_t len);
 ssize_t mg_recv(int from_fd, void *data_out);

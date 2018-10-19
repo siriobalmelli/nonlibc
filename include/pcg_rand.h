@@ -38,6 +38,7 @@ struct pcg_state {
 
 
 NLC_PUBLIC	uint32_t	pcg_rand(struct pcg_state *rng);
+NLC_PUBLIC	void		pcg_set(struct pcg_state *rng, void *mem, size_t len);
 NLC_PUBLIC	void		pcg_randset(void *mem, size_t len, uint64_t seed1, uint64_t seed2);
 
 

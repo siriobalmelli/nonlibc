@@ -57,7 +57,7 @@ endif
 # insert deps here:
 urcu = dependency('liburcu', static: dep_static, required: true)
 
-deps = [ urcu ]
+deps = [urcu]
 
 inc = include_directories('include')
 subdir('include')
