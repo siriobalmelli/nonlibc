@@ -24,9 +24,9 @@ stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
-  # TODO: would be nice to replace 'clang' with the value of 'compiler' arg
   buildInputs = [
     clang
+    gcc
     meson
     ninja
     pandoc
@@ -98,12 +98,5 @@ stdenv.mkDerivation rec {
       done
       mkdir -p $out/var/cache/packages
       mv -fv temp/* $out/var/cache/packages/
-  '';
-
-  # Allow YouCompleteMe and other tooling to see into the byzantine
-  #+	labyrinth of library includes.
-  # TODO: this string manipulation ought to be done in Nix.
-  shellHook = ''
-      export CPATH=$(echo $NIX_CFLAGS_COMPILE | sed "s/ \?-isystem /:/g")
   '';
 }
