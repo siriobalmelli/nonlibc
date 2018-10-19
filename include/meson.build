@@ -7,11 +7,14 @@ conf_data = configuration_data()
 #   headers
 ##
 headers = [ 'nonlibc.h',
+
     'b2hx.h',
     'binhex.h',
-    'fnv.h',
     'hx2b.h',
+
+    'fnv.h',
     'lifo.h',
+    'messenger.h',
     'nlc_urand.h',
     'nmath.h',
     'nmem.h',

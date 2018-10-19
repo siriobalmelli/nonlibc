@@ -19,6 +19,23 @@ uint32_t	pcg_rand(struct pcg_state *rng)
 }
 
 
+/* pcg_set()
+ * Fill 'len' bytes of 'mem' with random data generated using 'rnd'.
+ */
+void pcg_set(struct pcg_state *rnd, void *mem, size_t len)
+{
+	/* write 32-bit words */
+	uint32_t *word = mem;
+	mem += (len & ~(sizeof(uint32_t)-1));
+	while ((void *)word < mem)
+		*(word++) = pcg_rand(rnd);
+	/* trailing bytes */
+	uint8_t *byte = (uint8_t *)word;
+	mem += (len & (sizeof(uint32_t)-1));
+	while ((void *)byte < mem)
+		*(byte++) = pcg_rand(rnd);
+}
+
 /*	pcg_randset()
 Fill an area of memory with random bytes.
 */
@@ -27,14 +44,5 @@ void		pcg_randset(void *mem, size_t len, uint64_t seed1, uint64_t seed2)
 	/* setup rng */
 	struct pcg_state rnd_state;
 	pcg_seed(&rnd_state, seed1, seed2);
-	/* write 32-bit words */
-	uint32_t *word = mem;
-	mem += (len / sizeof(uint32_t) * sizeof(uint32_t));
-	while ((void *)word < mem)
-		*(word++) = pcg_rand(&rnd_state);
-	/* trailing bytes */
-	uint8_t *byte = (uint8_t *)word;
-	mem += (len % sizeof(uint32_t));
-	while ((void *)byte < mem)
-		*(byte++) = pcg_rand(&rnd_state);
+	pcg_set(&rnd_state, mem, len);
 }
