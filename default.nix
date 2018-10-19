@@ -35,7 +35,6 @@ stdenv.mkDerivation rec {
     dpkg
     fpm
     rpm
-    xorg.libpthreadstubs
     zip
   ];
   propagatedBuildInputs = [
