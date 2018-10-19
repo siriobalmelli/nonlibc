@@ -9,13 +9,8 @@ This header file exports defines and macros to clean up ugly code and abstract
 (c) 2017 Sirio Balmelli; https://b-ad.ch
 */
 
-
-
-/*
-	compile-time defines populated by build system
-*/
-#mesondefine NLC_CACHE_LINE
-
+/* TODO: not true on all systems, how to test this at compile-time? */
+#define NLC_CACHE_LINE 64
 
 
 /*	compile-time checks (size, etc)
@@ -29,7 +24,7 @@ Exploit the fact that a '0' bitfield throws a compiler error.
 
 /*	compile-time computation for number of array members
 */
-#define NLC_ARRAY_LEN(x) (sizeof(x) / sizeof(x[0]))
+#define NLC_ARRAY_LEN(x) (sizeof(x) / sizeof((x)[0]))
 
 
 /*	inlining!
@@ -103,7 +98,7 @@ Use these macros to time segments of code, without:
 	#include <time.h>
 
 	#define nlc_timing_2u64(tp) \
-		((uint64_t)tp.tv_nsec + ((uint64_t)tp.tv_sec * 1000000000))
+		((uint64_t)(tp).tv_nsec + ((uint64_t)(tp).tv_sec * 1000000000))
 
 	#define nlc_timing_start(timer_name) \
 		struct timespec tp_##timer_name = { 0 }; \
@@ -141,10 +136,10 @@ exec	:	function pointer e.g. 'free'
 */
 #define NLC_SWAP_EXEC(var, swap, exec) { \
 	typeof(var) bits_temp_; \
-	bits_temp_ = (typeof(var))__atomic_exchange_n(&var, (typeof(var))swap, __ATOMIC_ACQUIRE); \
-	if (bits_temp_ != ((typeof(var))swap)) { \
+	bits_temp_ = (typeof(var))__atomic_exchange_n(&(var), (typeof(var))(swap), __ATOMIC_ACQUIRE); \
+	if (bits_temp_ != ((typeof(var))(swap))) { \
 		exec(bits_temp_); \
-		bits_temp_ = (typeof(var))swap; \
+		bits_temp_ = (typeof(var))(swap); \
 	} \
 }
 
