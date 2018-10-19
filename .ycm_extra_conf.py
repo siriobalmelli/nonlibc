@@ -1,7 +1,12 @@
 '''.ycm_extra_conf.py
 Generic YouCompleteMe file for clang/gcc C projects using a Nix toolchain.
+
 Install this file as '.ycm_extra_conf.py' at the toplevel of your directory,
 next to 'default.nix' and 'meson.build'.
+
+Many, many thanks to Val Marcovic for YouCompleteMe (https://github.com/Valloric/YouCompleteMe)
+and for the original prototype for this script.
+
 (c) 2018 Sirio Balmelli
 '''
 from subprocess import check_output
@@ -34,13 +39,16 @@ def get_nix_flags():
             2>/dev/null \
         | sed -nE 's|\s*(/.*include)$|\1|p'
     '''.format(DIR)
-    lst = [p.strip() for p in
-           check_output(cmd, shell=True).split('\n')
-          ]
-    # prepend an '-isystem' to each path, discarding empty paths
-    # NOTE that '-isystem' means these includes will be used last
-    # (after flags and compilation db)
-    return [flat for p in lst for flat in ['-isystem', p] if p]
+    try:
+        lst = [p.strip() for p in
+               check_output(cmd, shell=True).split('\n')
+              ]
+        # prepend an '-isystem' to each path, discarding empty paths
+        # NOTE that '-isystem' means these includes will be used last
+        # (after flags and compilation db)
+        return [flat for p in lst for flat in ['-isystem', p] if p]
+    except Exception:  #pylint: disable=broad-except
+        return []
 
 def get_compile_db():
     '''get_compile_db()
@@ -52,10 +60,11 @@ def get_compile_db():
         find {0} -name compile_commands.json \
             | sort | head -n 1 | xargs dirname 2>/dev/null
     '''.format(DIR)
-    folder = check_output(cmd, shell=True).strip()
-    if folder:
+    try:
+        folder = check_output(cmd, shell=True).strip()
         return ycm_core.CompilationDatabase(folder)
-    return None
+    except Exception:  #pylint: disable=broad-except
+        return None
 
 def MakeRelativePathsInFlagsAbsolute(flags, working_directory):  # pylint: disable=invalid-name
     '''MakeRelativePathsInFlagsAbsolute()
@@ -130,6 +139,8 @@ def FlagsForFile(filename):  # pylint: disable=invalid-name
         final_flags = MakeRelativePathsInFlagsAbsolute(
             compilation_info.compiler_flags_,
             compilation_info.compiler_working_dir_)
+    else:
+        final_flags = []
 
     final_flags += get_nix_flags()
     final_flags += MakeRelativePathsInFlagsAbsolute(FLAGS, DIR)
