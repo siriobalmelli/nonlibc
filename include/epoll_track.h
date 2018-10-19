@@ -5,10 +5,10 @@
 
 Simplifies common use cases for Linux epoll.
 */
-#include <stdlib.h>
-#include <sys/epoll.h>
 #include <nonlibc.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <sys/epoll.h>
 #include <zed_dbg.h>
 
 #include <urcu/hlist.h>
