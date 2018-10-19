@@ -35,8 +35,8 @@ nonlibc_static = static_library(meson.project_name(),
 # Force install_dir to avoid e.g. lib/x86_64-linux-gnu/pkgconfig on Ubuntu,
 #+ which breaks other tools like Nix.
 pkg = import('pkgconfig')
-pkg.generate(	libraries : [ nonlibc_static, nonlibc, '-pthread' ],
-		requires : [ urcu, '-pthread' ],
+pkg.generate(	libraries : [nonlibc_static, nonlibc],
+		requires : deps,
 		install_dir : get_option('prefix') + '/lib/pkgconfig',
 		name : meson.project_name(),
 		filebase : meson.project_name(),
