@@ -59,3 +59,4 @@ _site/
 *.pyc
 .DS_Store
 result*
+.mypy_cache

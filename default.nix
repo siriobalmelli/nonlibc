@@ -35,6 +35,7 @@ stdenv.mkDerivation rec {
     dpkg
     fpm
     rpm
+    which
     zip
   ];
   propagatedBuildInputs = [
@@ -63,9 +64,6 @@ stdenv.mkDerivation rec {
     + " --buildtype=${buildtype}"
     + " -Ddep_type=${dep_type}";
   configurePhase = ''
-      echo "pkgconfig: $PKG_CONFIG_PATH"
-      echo "flags: $mFlags"
-      echo "prefix: $out"
       CC=${compiler} meson --prefix=$out build $mFlags
       cd build
   '';
