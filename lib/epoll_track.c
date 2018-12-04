@@ -57,8 +57,8 @@ out:
  * Returns 0 on success
  */
 int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
-		void (*callback)(int fd, uint32_t events, epoll_data_t context),
-		epoll_data_t context)
+		void (*callback) (int fd, uint32_t events, eptk_context_t context),
+		eptk_context_t context)
 {
 	int err_cnt = 0;
 	int e_flag = EPOLL_CTL_ADD;

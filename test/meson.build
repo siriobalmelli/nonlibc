@@ -12,7 +12,10 @@ tests = [
 ]
 
 if host_machine.system() == 'linux'
-  tests += ['epoll_track_test.c']
+  tests += [
+	'epoll_track_test.c',
+	'epoll_track_test_types.c'
+  ]
 endif
 
 # pthread dependency only for tests, not for the library itself

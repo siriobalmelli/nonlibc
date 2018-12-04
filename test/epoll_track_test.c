@@ -10,12 +10,12 @@
 
 /*	rx_callback()
  */
-void rx_callback(int fd, uint32_t events, epoll_data_t context)
+void rx_callback(int fd, uint32_t events, void *context)
 {
 	Z_die_if(!events, "events mask not propagated to callback");
 
 	/* accumulator */
-	unsigned int *acc = context.ptr;
+	unsigned int *acc = context;
 
 	unsigned int buf;
 	int ret;
@@ -55,15 +55,15 @@ int main()
 	for (int i=0; i < PIPE_COUNT; i++) {
 		int *curr_pipe = &pvc[i*2];
 		Z_die_if(pipe(curr_pipe), "");
-		Z_die_if(eptk_register(tk, curr_pipe[0], EPOLLIN, rx_callback,
-					(epoll_data_t){ .ptr = &counters[i] }),
-			"");
+		Z_die_if(eptk_register(tk, curr_pipe[0], EPOLLIN,
+				rx_callback, &counters[i])
+			, "");
 	}
 
 	/* try and register the last one again: should modify the existing one only */
-	Z_die_if(eptk_register(tk, pvc[(PIPE_COUNT-1)*2], EPOLLIN, rx_callback,
-				(epoll_data_t){ .ptr = &counters[(PIPE_COUNT-1)] }),
-		"");
+	Z_die_if(eptk_register(tk, pvc[(PIPE_COUNT-1)*2], EPOLLIN,
+			rx_callback, &counters[(PIPE_COUNT-1)])
+		, "");
 	Z_die_if(eptk_count(tk) != PIPE_COUNT,
 		"count %zu expected PIPE_COUNT of %d", eptk_count(tk), PIPE_COUNT);
 
@@ -107,7 +107,7 @@ int main()
 
 out:
 	eptk_free(tk, false);
-	for (int i=0; i < PIPE_COUNT * 2; i++) {
+	for (int i=0; i < NLC_ARRAY_LEN(pvc); i++) {
 		if (pvc[i] != -1)
 			close(pvc[i]);
 	}

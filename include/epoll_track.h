@@ -13,6 +13,23 @@ Simplifies common use cases for Linux epoll.
 
 #include <urcu/hlist.h>
 
+
+/*	eptk_context_t
+ * Make user calls to epoll_track more legible by removing typing garbage.
+ */
+typedef union {
+	void		*pointer;
+	int64_t		integer;
+	uint64_t	unsignd;
+	epoll_data_t	classic;
+} eptk_context_t __attribute__((__transparent_union__));
+
+/*	eptk_callback_t
+ * just for legibility
+ */
+typedef void (*eptk_callback_t) (int fd, uint32_t events, eptk_context_t context);
+
+
 /*	struct epoll_track_cb
  * metadata to admin epoll an epoll entry
  * @fd		file descriptor to be polled
@@ -24,8 +41,8 @@ struct epoll_track_cb {
 	struct cds_hlist_node	node;
 	int		fd;
 	uint32_t	events;
-	epoll_data_t	context;
-	void		(*callback)(int fd, uint32_t events, epoll_data_t context);
+	eptk_context_t	context;
+	eptk_callback_t	callback;
 };
 
 /*	struct epoll_track
@@ -47,8 +64,8 @@ NLC_PUBLIC struct epoll_track	*eptk_new();
 NLC_PUBLIC int			eptk_register(struct epoll_track *tk,
 						int fd,
 						uint32_t events,
-						void (*callback)(int fd, uint32_t events, epoll_data_t context),
-						epoll_data_t context);
+						eptk_callback_t callback,
+						eptk_context_t context);
 NLC_INLINE size_t		eptk_count(struct epoll_track *tk)
 {
 	return tk->rcnt;
@@ -60,7 +77,7 @@ NLC_PUBLIC int			eptk_pwait_exec(struct epoll_track *tk,
 
 
 #define EPTK_CB_PRN(cb) "@%p: fd %d events %d ctx %p callback %p", \
-	cb, cb->fd, cb->events, cb->context.ptr, cb->callback
+	cb, cb->fd, cb->events, cb->context.pointer, cb->callback
 
 /*	eptk_debug_dump()
  * Print all callbacks structures for debug purposes.
