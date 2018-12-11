@@ -47,7 +47,7 @@ On systems which support it, use mmap() and mremap() directly.
 #include <stddef.h>  /* size_t */
 
 #include <nonlibc.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 
 

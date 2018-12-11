@@ -7,7 +7,7 @@ Hide away the annoyance of "correctly" getting urandom across various systems.
 #define nonlibc_urand_h_
 
 #include <nonlibc.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 #include <unistd.h>	/* read(); close() */
 #include <fcntl.h>	/* open(); O_RDONLY */
@@ -23,14 +23,14 @@ NLC_INLINE size_t nlc_urand_open(void *buf, size_t len)
 {
 	int fd = -1;
 	size_t ret = -1;
-	Z_die_if((
+	NB_die_if((
 		fd = open("/dev/urandom", O_RDONLY)
 		) == -1, "open(\"/dev/urandom\" fail");
 
-	Z_die_if((
+	NB_die_if((
 		ret = read(fd, buf, len)
 		) != len, "ret %zu != len %zu", ret, len);
-out:
+die:
 	if (fd != -1)
 		close(fd);
 	return ret;

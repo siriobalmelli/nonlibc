@@ -127,12 +127,12 @@ die:
 int main()
 {
 	/* This will be incremented by any calls to
-	 * NB_err(), NB_err_if(), Z_die(), NB_die_if()
+	 * NB_err(), NB_err_if(), NB_die(), NB_die_if()
 	 */
 	int err_cnt = 0;
 
 	/* Print: the current function name as an "info" loglevel;
-	 * 'Z_inf' 'Z_wrn' and 'NB_err' levels are always enabled by default.
+	 * 'NB_inf' 'NB_wrn' and 'NB_err' levels are always enabled by default.
 	 */
 	NB_inf("current function: %s()", __FUNCTION__);
 

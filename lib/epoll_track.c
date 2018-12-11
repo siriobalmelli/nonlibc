@@ -1,6 +1,6 @@
 #include <epoll_track.h>
 #include <unistd.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 /*	eptk_free()
  * @close_children	exec close() on all tracked fds
@@ -33,17 +33,17 @@ void eptk_free(struct epoll_track *tk, bool close_children)
 struct epoll_track *eptk_new()
 {
 	struct epoll_track *tk = NULL;
-	Z_die_if(!(
+	NB_die_if(!(
 		tk = calloc(sizeof(struct epoll_track), 1)
 		), "alloc sz %zu", sizeof(struct epoll_track));
 
 	/* setup epoll loop */
-	Z_die_if((
+	NB_die_if((
 		tk->epfd = epoll_create1(0)
 		) < 0, "fail to create epoll");
 
 	return tk;
-out:
+die:
 	eptk_free(tk, false);
 	return NULL;
 }
@@ -63,7 +63,7 @@ int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
 	int err_cnt = 0;
 	int e_flag = EPOLL_CTL_ADD;
 	struct epoll_track_cb *new_cb = NULL;
-	Z_die_if(!tk || fd < 0 || !events || !callback, "");
+	NB_die_if(!tk || fd < 0 || !events || !callback, "");
 
 	/* look for existing callbacks on the same fd and modify instead */
 	struct epoll_track_cb *curr;
@@ -79,12 +79,12 @@ int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
 	if (!new_cb) {
 		/* extend report array */
 		size_t alloc_sz = ++tk->rcnt * sizeof(struct epoll_event);
-		Z_die_if(!(
+		NB_die_if(!(
 			tk->report = realloc(tk->report, alloc_sz)
 			), "fail alloc sz %zu", alloc_sz);
 
 		/* add new callback to list */
-		Z_die_if(!(
+		NB_die_if(!(
 			new_cb = malloc(sizeof(*new_cb))
 			), "fail alloc sz %zu", sizeof(*new_cb));
 	}
@@ -98,17 +98,17 @@ int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
 		.data.ptr = new_cb,
 		.events = new_cb->events
 	};
-	Z_die_if(
+	NB_die_if(
 		epoll_ctl(tk->epfd, e_flag, new_cb->fd, &ep_in)
 		, "epfd %d; register fail for fd %d", tk->epfd, new_cb->fd);
 
 	/* don't add to list until epoll succeeded */
 	if (e_flag == EPOLL_CTL_ADD)
 		cds_hlist_add_head(&new_cb->node, &tk->cb_list);
-	Z_log(Z_in2, "register " EPTK_CB_PRN(new_cb));
+	//NB_inf("register " EPTK_CB_PRN(new_cb));
 
 	return err_cnt;
-out:
+die:
 	/* failed modify must not leave list in an inconsistent state */
 	if (e_flag == EPOLL_CTL_MOD)
 		cds_hlist_del(&new_cb->node);
@@ -132,7 +132,7 @@ int eptk_remove(struct epoll_track *tk, int fd)
 		if (curr->fd != fd)
 			continue;
 		cds_hlist_del(&curr->node);
-		Z_err_if(
+		NB_err_if(
 			epoll_ctl(tk->epfd, EPOLL_CTL_DEL, curr->fd, NULL)
 			, "epfd %d remove fail for fd %d", tk->epfd, curr->fd);
 		removed++;

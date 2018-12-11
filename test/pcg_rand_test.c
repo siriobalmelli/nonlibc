@@ -12,7 +12,7 @@ For all the 411, see 'pcg_rand.h'
 
 #include <fnv.h>
 #include <pcg_rand.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <stdlib.h> /* free() */
 
 
@@ -33,7 +33,7 @@ int test_pcg_rand()
 	pcg_seed(&pcg2, PCG_RAND_S1, PCG_RAND_S2);
 	uint32_t res2 = pcg_rand(&pcg2);
 
-	Z_err_if(res1 != res2, "rng not reproducible: %"PRIu32" != %"PRIu32, res1, res2);
+	NB_err_if(res1 != res2, "rng not reproducible: %"PRIu32" != %"PRIu32, res1, res2);
 
 	return err_cnt;
 }
@@ -56,7 +56,7 @@ int test_pcg_randset()
 	pcg_randset(mem_a, len, PCG_RAND_S1, PCG_RAND_S2);
 	pcg_randset(mem_b, len, PCG_RAND_S1, PCG_RAND_S2);
 
-	Z_err_if(fnv_hash64(NULL, mem_a, len) != fnv_hash64(NULL, mem_b, len),
+	NB_err_if(fnv_hash64(NULL, mem_a, len) != fnv_hash64(NULL, mem_b, len),
 		"hash mismatch for pcg_randset()");
 
 	free(mem_a);
@@ -107,9 +107,9 @@ int test_pcg_rand_bound()
 	/* TODO: this threshold is entirely subjective.
 	Need some input/guidance on what's acceptable.
 	*/
-	Z_err_if(lowest_deviation > 0.001 || highest_deviation > 0.001, "bad algorithm");
+	NB_err_if(lowest_deviation > 0.001 || highest_deviation > 0.001, "bad algorithm");
 	/* print info regardless */
-	Z_log(Z_inf, "%"PRIuFAST32" rng calls bounded at %"PRIuFAST32": -%f <%"PRIuFAST32"> +%f",
+	NB_inf("%"PRIuFAST32" rng calls bounded at %"PRIuFAST32": -%f <%"PRIuFAST32"> +%f",
 		numiter, bound, lowest_deviation, expected, highest_deviation);
 
 	return err_cnt;

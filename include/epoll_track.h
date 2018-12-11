@@ -9,7 +9,7 @@ Simplifies common use cases for Linux epoll.
 #include <stdbool.h>
 #include <stdlib.h>
 #include <sys/epoll.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 #include <urcu/hlist.h>
 
@@ -86,7 +86,7 @@ NLC_INLINE void			eptk_debug_dump(struct epoll_track *tk)
 {
 	struct epoll_track_cb *curr = NULL;
 	cds_hlist_for_each_entry_2(curr, &tk->cb_list, node)
-		Z_log(Z_inf, "dump "EPTK_CB_PRN(curr));
+		NB_inf("dump "EPTK_CB_PRN(curr));
 }
 
 #endif /* epoll_track_h_ */

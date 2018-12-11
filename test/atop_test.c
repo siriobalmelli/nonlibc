@@ -1,4 +1,4 @@
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <nonlibc.h>
 #include <unistd.h>	/* close */
 #include <stdlib.h>	/* malloc() / free() */
@@ -51,10 +51,10 @@ struct libw_widget *libw_new(void *random_arg)
 	struct libw_widget *ret = NULL;
 
 	/* check arg sanity */
-	Z_die_if(!random_arg, "expecting non-NULL function arg");
+	NB_die_if(!random_arg, "expecting non-NULL function arg");
 
 	/* fail on bad malloc() */
-	Z_die_if((ret = malloc(sizeof(struct libw_widget))) == NULL,
+	NB_die_if((ret = malloc(sizeof(struct libw_widget))) == NULL,
 		"alloc size %zu",
 		sizeof(struct libw_widget));
 
@@ -62,13 +62,13 @@ struct libw_widget *libw_new(void *random_arg)
 	ret->fd = -1;
 	/*
 		Code to try and open fd, do other operations.
-		All statements checked for success with a Z_die_if().
+		All statements checked for success with a NB_die_if().
 	*/
 
 
 	/* success - return an object */
 	return ret;
-out:
+die:
 	/* failure - clean up gracefully */
 	libw_free(ret);
 	return NULL;

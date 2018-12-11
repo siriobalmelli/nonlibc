@@ -7,7 +7,7 @@ A command-line application, on the pattern of md5sum,
 (c) 2017 Sirio Balmelli; https://b-ad.ch
 */
 
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <fnv.h>
 
 /* stat() */
@@ -59,9 +59,9 @@ int do_file(const char *file)
 
 	/* stat file; sanity */
 	struct stat st;
-	Z_die_if( stat(file, &st),
+	NB_die_if( stat(file, &st),
 		"error stat()ing '%s'", file);
-	Z_die_if(!S_ISREG(st.st_mode),
+	NB_die_if(!S_ISREG(st.st_mode),
 		"'%s' not a regular file", file);
 	
 	/* init hash */
@@ -69,11 +69,11 @@ int do_file(const char *file)
 
 	if (st.st_size) {
 		/* open file */
-		Z_die_if((
+		NB_die_if((
 			fd = open(file, O_RDONLY)
 			) == -1, "open() '%s'", file);
 		/* map it */
-		Z_die_if((
+		NB_die_if((
 			map = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0)
 			) == MAP_FAILED, "mmap() '%s'", file);
 	}
@@ -82,7 +82,7 @@ int do_file(const char *file)
 	hash = fnv_hash64(NULL, map, st.st_size);
 	fprintf(stdout, "%"PRIx64"  %s\n", hash, file);
 
-out:
+die:
 	if (map && map != MAP_FAILED)
 		munmap(map, st.st_size);
 	if (fd != -1)

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 /*	ncp	the nmem cp replacement
 
@@ -51,17 +51,17 @@ int cp(const char *src_path, const char *dst_path)
 	char *dst_dir = NULL;
 
 	/* open source */
-	Z_die_if(
+	NB_die_if(
 		nmem_file(src_path, &src)
 		, "");
 	/* open destination */
 	dst_dir = n_dirname(dst_path);
-	Z_die_if(
+	NB_die_if(
 		nmem_alloc(src.len, dst_dir, &dst)
 		, "");
 
 	/* do copy */
-	Z_die_if((
+	NB_die_if((
 		nmem_cp(&src, 0, src.len, &dst, 0)
 		) != src.len, "");
 
@@ -75,7 +75,7 @@ int cp(const char *src_path, const char *dst_path)
 	if (verbose)
 		fprintf(stdout, "'%s' -> '%s'\n", src_path, dst_path);
 
-out:
+die:
 	nmem_free(&src, NULL);
 	nmem_free(&dst, NULL);
 	free(dst_dir);
@@ -105,19 +105,19 @@ int main(int argc, char **argv)
 			case 'v':
 				verbose++;
 				if (verbose >= 2)
-					Z_log(Z_inf, "verbose");
+					NB_inf("verbose");
 				break;
 			case 'f':
 				force = 1;
 				if (verbose >= 2)
-					Z_log(Z_inf, "force");
+					NB_inf("force");
 				break;
 			case 'h':
 				print_usage(argv[0]);
-				goto out;
+				goto die;
 			default:
 				print_usage(argv[0]);
-				Z_die("option '%c' invalid", opt);
+				NB_die("option '%c' invalid", opt);
 		}
 	}
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	int count = argc - optind;
 	if (count < 2) {
 		print_usage(argv[0]);
-		Z_die("missing SOURCE_FILE or DEST_FILE");
+		NB_die("missing SOURCE_FILE or DEST_FILE");
 	}
 
 	/* SOURCE_FILE DEST_FILE */
@@ -147,6 +147,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-out:
+die:
 	return err_cnt;
 }

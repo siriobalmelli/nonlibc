@@ -1,5 +1,5 @@
 #include <npath.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 static const char n_sep = '/'; /* TODO: unsure best way to make this cross-platform */
 
@@ -50,7 +50,7 @@ char	*n_dirname(const char *path)
 		aka: all your corner cases are belong to us.
 	*/
 	if (!last_sep) {
-		Z_die_if(!(
+		NB_die_if(!(
 			ret = malloc(2)
 			), "");
 		if (path[0] == '/')
@@ -60,7 +60,7 @@ char	*n_dirname(const char *path)
 
 	/* Alloc and copy UP TO (but not including) last separator encountered */
 	} else {
-		Z_die_if(!(
+		NB_die_if(!(
 			ret = malloc(last_sep+1)
 			), "len = %zu", last_sep+1);
 		memcpy(ret, path, last_sep);
@@ -68,7 +68,7 @@ char	*n_dirname(const char *path)
 	}
 
 	return ret;
-out:
+die:
 	free(ret);
 	return NULL;
 }
@@ -93,7 +93,7 @@ char	*n_basename(const char *path)
 
 	/* string will be at most this long */
 	len -= last_sep;
-	Z_die_if(!(
+	NB_die_if(!(
 		ret = malloc(len+1)
 		), "len %zu", len);
 
@@ -105,7 +105,7 @@ char	*n_basename(const char *path)
 	ret[len] = '\0';
 
 	return ret;
-out:
+die:
 	free(ret);
 	return NULL;
 }
@@ -129,7 +129,7 @@ char *n_join(const char *dir_name, const char *base_name)
 	char *ret = NULL;
 	size_t dir_len = 0, base_len = 0;
 
-	Z_die_if(!base_name, "args");
+	NB_die_if(!base_name, "args");
 	base_len = strlen(base_name);
 
 	/* sanitize dir */
@@ -147,7 +147,7 @@ char *n_join(const char *dir_name, const char *base_name)
 	}
 
 
-	Z_die_if(!(
+	NB_die_if(!(
 		ret = malloc(dir_len + base_len + 2)
 		), "len %zu", dir_len + base_len + 2);
 
@@ -165,7 +165,7 @@ char *n_join(const char *dir_name, const char *base_name)
 	}
 
 	return ret;
-out:
+die:
 	free(ret);
 	return NULL;
 }

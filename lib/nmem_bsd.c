@@ -3,10 +3,7 @@
 */
 
 #include <nmem.h>
-
-//#define Z_LOG_LVL (Z_inf | Z_wrn | Z_err | Z_in2)
-#include <zed_dbg.h>
-
+#include <ndebug.h>
 #include <npath.h>
 #include <fcntl.h>
 #include <sys/param.h> /* MAXPATHLEN */
@@ -18,7 +15,7 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 {
 	int err_cnt = 0;
 	char *tmpfile = NULL;
-	Z_die_if(!len || !out, "args");
+	NB_die_if(!len || !out, "args");
 	out->len = len;
 
 	if (!tmp_dir)
@@ -28,25 +25,25 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 
 	/* open an fd */
 	out->o_flags = 0;
-	Z_die_if((
+	NB_die_if((
 		out->fd = mkstemp(tmpfile)
 		) == -1, "failed to open temp file in %s", tmp_dir);
 	/* TODO: must figure out how to unlink from filesystem for security
 		... while still being able to link INTO filesystem at 'nmem_free'
 		below. !
-	Z_die_if((
+	NB_die_if((
 		unlink(tmpfile)
 		) == -1, "unlink %s", tmpfile);
 	*/
 
 	/* size and map */
-	Z_die_if(ftruncate(out->fd, out->len), "len=%ld", out->len);
-	Z_die_if((
+	NB_die_if(ftruncate(out->fd, out->len), "len=%ld", out->len);
+	NB_die_if((
 		out->mem = mmap(NULL, out->len, PROT_READ | PROT_WRITE, MAP_SHARED, out->fd, 0)
 		) == MAP_FAILED, "map sz %zu fd %"PRId32, out->len, out->fd);
 
 	return 0;
-out:
+die:
 	free(tmpfile);
 	nmem_free(out, NULL);
 	return err_cnt;
@@ -68,15 +65,15 @@ void nmem_free(struct nmem *nm, const char *deliver_path)
 	/* deliver if requested */
 	if (deliver_path) {
 		char path[MAXPATHLEN];
-		Z_die_if((
+		NB_die_if((
 			fcntl(nm->fd, F_GETPATH, path)
 			) == -1, "");		
-		Z_die_if((
+		NB_die_if((
 			rename(path, deliver_path)
 			) == -1, "%s -> %s", path, deliver_path);
 	}
 
-out:
+die:
 	/* close */
 	if (nm->fd != -1)
 		close(nm->fd);
@@ -92,11 +89,11 @@ ssize_t nmem_in_splice(struct nmem	*nm,
      			int		fd_pipe_from)
 {
 	ssize_t ret = -1;
-	Z_die_if(!nm || fd_pipe_from < 1, "args");
+	NB_die_if(!nm || fd_pipe_from < 1, "args");
 
 	ret = read(fd_pipe_from, nm->mem + offset, len);
-	Z_die_if(ret < 0, "len %zu", len);
-out:
+	NB_die_if(ret < 0, "len %zu", len);
+die:
 	return ret;
 }
 
@@ -109,7 +106,7 @@ ssize_t nmem_out_splice(struct nmem	*nm,
 			int		fd_pipe_to)
 {
 	ssize_t ret = -1;
-	Z_die_if(!nm || fd_pipe_to < 1, "args");
+	NB_die_if(!nm || fd_pipe_to < 1, "args");
 
 	/* Owing to DARWIN's inevitable, demoralizing behavior of BLOCKING when
 		write()ing to a pipe,
@@ -120,11 +117,11 @@ ssize_t nmem_out_splice(struct nmem	*nm,
 	*/
 	if (len > PIPE_BUF)
 		len = PIPE_BUF;
-	Z_log(Z_in2, "len %zu; offt %zu", len, offset);
+	//NB_inf("len %zu; offt %zu", len, offset);
 
 	ret = write(fd_pipe_to, nm->mem + offset, len);
-	Z_die_if(ret < 0, "len %zu", len);
-out:
+	NB_die_if(ret < 0, "len %zu", len);
+die:
 	return ret;
 }
 
@@ -147,13 +144,13 @@ size_t nmem_cp(struct nmem	*src,
 	if (len > dst->len - dst_offt)
 		len = dst->len - dst_offt;
 
-	Z_die_if((
+	NB_die_if((
 		lseek(src->fd, src_offt, SEEK_SET)
 		) < 0, "seek to %zu fail", src_offt);
 
 	while (done < len)
 		done += nmem_in_splice(dst, dst_offt, len-done, src->fd);
 
-out:
+die:
 	return done;
 }

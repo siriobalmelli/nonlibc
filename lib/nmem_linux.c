@@ -3,7 +3,7 @@
 */
 
 #include <nmem.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <limits.h> /* PIPE_BUF */
 
 
@@ -31,7 +31,7 @@ In both cases a valid fd is obtained, so that splice()
 int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 {
 	int err_cnt = 0;
-	Z_die_if(!len || !out, "args");
+	NB_die_if(!len || !out, "args");
 	out->len = len;
 
 	if (!tmp_dir) {
@@ -42,7 +42,7 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 		out->o_flags = O_NONBLOCK;
 		char name[16];
 		snprintf(name, 16, "nmem_%zu", out->len);
-		Z_die_if((
+		NB_die_if((
 			out->fd = syscall(__NR_memfd_create, name, out->o_flags)
 			) == -1, "");
 		/* fallback: create a temp file on disk */
@@ -54,19 +54,19 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 	/* open an fd */
 	if (tmp_dir) {
 		out->o_flags = O_RDWR | O_TMPFILE | O_NONBLOCK;
-		Z_die_if((
+		NB_die_if((
 			out->fd = open(tmp_dir, out->o_flags, NMEM_PERMS)
 			) == -1, "failed to open temp file in %s", tmp_dir);
 	}
 
 	/* size and map */
-	Z_die_if(ftruncate(out->fd, out->len), "len=%zu", out->len);
-	Z_die_if((
+	NB_die_if(ftruncate(out->fd, out->len), "len=%zu", out->len);
+	NB_die_if((
 		out->mem = mmap(NULL, out->len, PROT_READ | PROT_WRITE, MAP_SHARED, out->fd, 0)
 		) == MAP_FAILED, "map sz %zu fd %"PRId32, out->len, out->fd);
 
 	return 0;
-out:
+die:
 	nmem_free(out, NULL);
 	return err_cnt;
 }
@@ -89,7 +89,7 @@ void nmem_free(struct nmem *nm, const char *deliver_path)
 	if (deliver_path && (nm->o_flags & O_TMPFILE)) {
 		char src[32];
 		snprintf(src, 32, "/proc/self/fd/%d", nm->fd);
-		Z_err_if(
+		NB_err_if(
 			linkat(AT_FDCWD, src, AT_FDCWD, deliver_path, AT_SYMLINK_FOLLOW)
 			, "%s -> %s", src, deliver_path);
 	}
@@ -112,7 +112,7 @@ ssize_t	nmem_in_splice(struct nmem	*nm,
 			int		fd_pipe_from)
 {
 	ssize_t ret = -1;
-	Z_die_if(!nm || fd_pipe_from < 1, "args");
+	NB_die_if(!nm || fd_pipe_from < 1, "args");
 
 	ret = splice(fd_pipe_from, NULL, nm->fd, (loff_t*)&offset,
 				len, NMEM_SPLICE_FLAGS);
@@ -124,9 +124,9 @@ ssize_t	nmem_in_splice(struct nmem	*nm,
 		ret = read(fd_pipe_from, nm->mem + offset, len);
 	}
 
-	Z_die_if(ret < 0, "len %zu @%zu offt; fd_pipe_from %d -> nm->fd %d",
+	NB_die_if(ret < 0, "len %zu @%zu offt; fd_pipe_from %d -> nm->fd %d",
 			len, offset, fd_pipe_from, nm->fd);
-out:
+die:
 	return ret;
 }
 
@@ -141,7 +141,7 @@ ssize_t nmem_out_splice(struct nmem	*nm,
 			int		fd_pipe_to)
 {
 	ssize_t ret = -1;
-	Z_die_if(!nm || fd_pipe_to < 1, "args");
+	NB_die_if(!nm || fd_pipe_to < 1, "args");
 
 	ret = splice(nm->fd, (loff_t*)&offset, fd_pipe_to, NULL,
 				len, NMEM_SPLICE_FLAGS);
@@ -153,9 +153,9 @@ ssize_t nmem_out_splice(struct nmem	*nm,
 		ret = write(fd_pipe_to, nm->mem + offset, len);
 	}
 
-	Z_die_if(ret < 0, "len %zu @%zu offt; nm->fd %d -> fd_pipe_to %d",
+	NB_die_if(ret < 0, "len %zu @%zu offt; nm->fd %d -> fd_pipe_to %d",
 			len, offset, nm->fd, fd_pipe_to);
-out:
+die:
 	return ret;
 }
 
@@ -178,15 +178,15 @@ size_t nmem_cp(struct nmem	*src,
 		len = dst->len - dst_offt;
 
 	int piping[2] = { -1, -1 };
-	Z_die_if(pipe2(piping, O_NONBLOCK), "");
+	NB_die_if(pipe2(piping, O_NONBLOCK), "");
 
 	/* splicings */
 	for (size_t fd_sz=0; done < src->len; ) {
-		Z_die_if((
+		NB_die_if((
 			fd_sz = nmem_out_splice(src, done, src->len-done, piping[1])
 			) == -1, "");
 		for (size_t temp=0; fd_sz > 0; ) {
-			Z_die_if((
+			NB_die_if((
 				temp = nmem_in_splice(dst, done, fd_sz, piping[0])
 				) == -1, "");
 			done += temp;
@@ -194,7 +194,7 @@ size_t nmem_cp(struct nmem	*src,
 		}
 	}
 
-out:
+die:
 	if (piping[0] != -1) {
 		close(piping[0]);
 		close(piping[1]);

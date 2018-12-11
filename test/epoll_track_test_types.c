@@ -12,7 +12,7 @@
 #include <limits.h> /* PIPE_BUF */
 #include <string.h>
 
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <epoll_track.h>
 
 const uint64_t test_context = 42;
@@ -23,15 +23,15 @@ const char *nonsense = "hello world";
  */
 void generic_callback(int fd, uint32_t events, uint64_t context)
 {
-	Z_err_if((uint64_t)context != test_context,
+	NB_err_if((uint64_t)context != test_context,
 		"type handling broken: %lu != %lu",
 		(uint64_t)context, test_context);
 
 	char buf[PIPE_BUF];
 	ssize_t ret = read(fd, buf, PIPE_BUF);
-	Z_err_if(ret < 1, "");
+	NB_err_if(ret < 1, "");
 
-	Z_err_if(strcmp(buf, nonsense),
+	NB_err_if(strcmp(buf, nonsense),
 		"%s != %s", buf, nonsense);
 }
 
@@ -40,29 +40,29 @@ void generic_callback(int fd, uint32_t events, uint64_t context)
  */
 int main()
 {
-	/* rely on zed_dbg.h global err_cnt: allow callbacks to incremement it!
+	/* rely on ndebug.h global err_cnt: allow callbacks to incremement it!
 	 * int err_cnt = 0;
 	 */
 	struct epoll_track *tk = NULL;
 	int pvc[2] = { -1 };
 
 	/* pipe */
-	Z_die_if(pipe(pvc), "");
+	NB_die_if(pipe(pvc), "");
 	/* epoll tracker */
-	Z_die_if(!(
+	NB_die_if(!(
 		tk = eptk_new()
 		), "");
 	/* register reader */
-	Z_die_if(eptk_register(tk, pvc[0], EPOLLIN, generic_callback, test_context), "");
+	NB_die_if(eptk_register(tk, pvc[0], EPOLLIN, generic_callback, test_context), "");
 
 	/* write nonsense */
 	size_t ret = strlen(nonsense);
-	Z_die_if(write(pvc[1], nonsense, ret) != ret, "");
+	NB_die_if(write(pvc[1], nonsense, ret) != ret, "");
 
 	/* execute callback */
-	Z_die_if(eptk_pwait_exec(tk, 1, NULL) != 1, "");
+	NB_die_if(eptk_pwait_exec(tk, 1, NULL) != 1, "");
 
-out:
+die:
 	eptk_free(tk, false);
 	for (int i=0; i < NLC_ARRAY_LEN(pvc); i++) {
 		if (pvc[i] != -1)

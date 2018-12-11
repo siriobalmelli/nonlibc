@@ -1,4 +1,4 @@
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <posigs.h>
 
 
@@ -12,16 +12,16 @@ The most basic of functional signal handling
 */
 static void psg_handler_default_(int signum)
 {
-	Z_log_line();
+	NB_line();
 	switch (signum) {
 	case SIGTERM:
-		Z_log(Z_inf, "SIGTERM");
+		NB_inf("SIGTERM");
 		break;
 	case SIGINT:
-		Z_log(Z_inf, "SIGINT");
+		NB_inf("SIGINT");
 		break;
 	default:
-		Z_log(Z_err, "don't know what to do with SIG %d", signum);
+		NB_err("don't know what to do with SIG %d", signum);
 	}
 
 	/* signal program to terminate */
@@ -51,11 +51,11 @@ int psg_sigsetup(void (*handler)(int signum))
 	int signals[] = { SIGTERM, SIGINT, SIGQUIT, SIGHUP };
 
 	for (int i=0; i < NLC_ARRAY_LEN(signals); i++) {
-		Z_err_if(sigaction(signals[i], NULL, &old)
+		NB_err_if(sigaction(signals[i], NULL, &old)
 			, "SIG %d", signals[i]);
 		/* avoid installing handler if signal is being ignored */
 		if (old.sa_handler != SIG_IGN) {
-			Z_err_if(sigaction(signals[i], &action, NULL)
+			NB_err_if(sigaction(signals[i], &action, NULL)
 				, "SIG %d", signals[i]);
 		}
 	}

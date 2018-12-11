@@ -9,7 +9,7 @@ NOTE that while it would be nice to see a CRC32 comparison in here
 
 #include <nonlibc.h>
 #include <fnv.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 
 #include <nlc_urand.h>
 #include <pcg_rand.h>
@@ -76,7 +76,7 @@ int equivalence()
 			hash_b = fnv_hash64(&hash_b, (uint8_t *)&phrases[i][j++], 1);
 
 		/* compare */
-		Z_err_if(hash_a != hash_b,
+		NB_err_if(hash_a != hash_b,
 			"operations not equivalent : i %"PRIu64" != j %"PRIu64,
 			i, j);
 	}
@@ -98,10 +98,10 @@ int correctness()
 	for (uint_fast16_t i = 0; i < NLC_ARRAY_LEN(phrases); i++) {
 		/* 64-bit */
 		uint64_t res64 = fnv_hash64(NULL, phrases[i], strlen(phrases[i]));
-		Z_err_if(res64 != out64[i], "i=%"PRIuFAST16"; 0x%"PRIx64" != 0x%"PRIx64, i, res64, out64[i]);
+		NB_err_if(res64 != out64[i], "i=%"PRIuFAST16"; 0x%"PRIx64" != 0x%"PRIx64, i, res64, out64[i]);
 		/* 32-bit */
 		uint32_t res32 = fnv_hash32(NULL, phrases[i], strlen(phrases[i]));
-		Z_err_if(res32 != out32[i], "i=%"PRIuFAST16"; 0x%"PRIx32" != 0x%"PRIx32, i, res32, out32[i]);
+		NB_err_if(res32 != out32[i], "i=%"PRIuFAST16"; 0x%"PRIx32" != 0x%"PRIx32, i, res32, out32[i]);
 	}
 
 	return err_cnt;
@@ -121,28 +121,28 @@ int	speed()
 	void *large = NULL;
 
 	/* alloc large block, seed with random data */
-	Z_die_if(!(
+	NB_die_if(!(
 		large = malloc(sz)
 		), "malloc %zu", sz);
 	uint64_t seeds[2];
-	Z_die_if(nlc_urand(seeds, sizeof(seeds)) != sizeof(seeds), "");
+	NB_die_if(nlc_urand(seeds, sizeof(seeds)) != sizeof(seeds), "");
 	pcg_randset(large, sz, seeds[0], seeds[1]);
 
 	/* run FNV64 */
 	nlc_timing_start(fnv64);
 	uint64_t res64 = fnv_hash64(NULL, large, sz);
 	nlc_timing_stop(fnv64);
-	Z_log(Z_inf, "fnv_hash64 on %zuB: %fs - %"PRIx64,
+	NB_inf("fnv_hash64 on %zuB: %fs - %"PRIx64,
 			sz, nlc_timing_cpu(fnv64), res64);
 
 	/* run FNV32 */
 	nlc_timing_start(fnv32);
 	uint32_t res32 = fnv_hash64(NULL, large, sz);
 	nlc_timing_stop(fnv32);
-	Z_log(Z_inf, "fnv_hash32 on %zuB: %fs - %"PRIx32,
+	NB_inf("fnv_hash32 on %zuB: %fs - %"PRIx32,
 			sz, nlc_timing_cpu(fnv32), res32);
 
-out:
+die:
 	free(large);
 	return err_cnt;
 }

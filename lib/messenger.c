@@ -1,4 +1,4 @@
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <nonlibc.h>
 #include <messenger.h>
 
@@ -68,12 +68,12 @@ void mgrp_free(struct mg_group *grp)
 struct mg_group *mgrp_new()
 {
 	struct mg_group *grp = NULL;
-	Z_die_if(!(
+	NB_die_if(!(
 		grp = malloc(sizeof *grp)
 		), "");
 	/* TODO: init rcu linked list */
 	return grp;
-out:
+die:
 	mgrp_free(grp);
 	return NULL;
 }
@@ -108,7 +108,7 @@ int mgrp_broadcast(struct mg_group *grp, void *data, size_t len)
 	/* TODO: walk linked list
 	while (curr_fd = rcu_next(grp->fd_rcu))
 	*/
-		Z_err_if(write(curr_fd, &mg, PIPE_BUF) != PIPE_BUF,
+		NB_err_if(write(curr_fd, &mg, PIPE_BUF) != PIPE_BUF,
 			"curr_fd %d", curr_fd);
 	if (err_cnt)
 		return -1;

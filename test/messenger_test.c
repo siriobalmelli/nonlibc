@@ -1,4 +1,4 @@
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <posigs.h> /* use atomic PSG kill flag as inter-thread err_cnt */
 #include <fnv.h>
 #include <pcg_rand.h>
@@ -31,11 +31,11 @@ void *tx_thread(void* arg)
 {
 	int err_cnt = 0;
 	struct blob *header = NULL;
-	Z_die_if(!(
+	NB_die_if(!(
 		header = malloc(MG_MAX)
 		), "MG_MAX %zu", MG_MAX);
 	header->thread_id = (unsigned int)arg;
-	Z_log(Z_inf, "tx %u", header->thread_id);
+	NB_inf("tx %u", header->thread_id);
 
 	/* Generate variable-sized messages,
 	 * up to the maximum number of bytes that
@@ -64,9 +64,9 @@ void *tx_thread(void* arg)
 		/* Send the data */
 		size_t send_len = sizeof(struct blob) + header->len;
 		ssize_t ret = mg_send(contended[1], header, send_len);
-		Z_die_if(ret != send_len, "");
+		NB_die_if(ret != send_len, "");
 	}
-out:
+die:
 	free(header);
 	if (err_cnt)
 		psg_kill();
@@ -87,7 +87,7 @@ void *rx_thread(void* arg)
 	 * this platform guarantees will be sent atomically.
 	 */
 	struct blob *header = NULL;
-	Z_die_if(!(
+	NB_die_if(!(
 		header = malloc(MG_MAX)
 		), "MG_MAX %zu", MG_MAX);
 
@@ -104,8 +104,8 @@ void *rx_thread(void* arg)
 		uint64_t *hash = &rx_hash[header->thread_id];
 		*hash = fnv_hash64(hash, header->bytes, header->len);
 	}
-	Z_err_if(x != ITERS * THREAD_CNT, "");
-out:
+	NB_err_if(x != ITERS * THREAD_CNT, "");
+die:
 	free(header);
 	if (err_cnt)
 		psg_kill();
@@ -120,23 +120,23 @@ int main()
 	pthread_t txes[THREAD_CNT];
 	pthread_t rx;
 
-	Z_die_if(pipe(contended), "");
+	NB_die_if(pipe(contended), "");
 
 	/* run all threads */
 	for (uintptr_t i=0; i < THREAD_CNT; i++) {
-		Z_die_if(pthread_create(&txes[i], NULL, tx_thread, (void *)i), "");
+		NB_die_if(pthread_create(&txes[i], NULL, tx_thread, (void *)i), "");
 	}
-	Z_die_if(pthread_create(&rx, NULL, rx_thread, NULL), "");
+	NB_die_if(pthread_create(&rx, NULL, rx_thread, NULL), "");
 
 	for (int i=0; i < THREAD_CNT; i++)
-		Z_die_if(pthread_join(txes[i], NULL), "");
-	Z_die_if(pthread_join(rx, NULL), "");
+		NB_die_if(pthread_join(txes[i], NULL), "");
+	NB_die_if(pthread_join(rx, NULL), "");
 
 	/* test results */
 	for (int i=0; i < THREAD_CNT; i++)
-		Z_err_if(tx_hash[i] != rx_hash[i], "thread %d", i);
+		NB_err_if(tx_hash[i] != rx_hash[i], "thread %d", i);
 
-out:
+die:
 	if (contended[0] != -1)
 		close(contended[0]);
 	if (contended[1] != -1)

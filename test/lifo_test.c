@@ -1,5 +1,5 @@
 #include <nonlibc.h>
-#include <zed_dbg.h>
+#include <ndebug.h>
 #include <lifo.h>
 #include <time.h> /* clock() */
 #include <stdlib.h> /* getenv() */
@@ -10,13 +10,13 @@ int	test_many(LIFO_MEM_TYPE numiter)
 {
 	int err_cnt = 0;
 	struct lifo *stk = NULL;
-	Z_die_if(!(stk = lifo_new()),
+	NB_die_if(!(stk = lifo_new()),
 		"");
 
 	/* push to stack sequentially */
 	for (LIFO_MEM_TYPE i=0; i < numiter; i++) {
 		LIFO_MEM_TYPE ret = lifo_push(&stk, i);
-		Z_die_if(ret != i,
+		NB_die_if(ret != i,
 			"ret %zu != i %zu",
 			ret, i);
 	}
@@ -24,22 +24,19 @@ int	test_many(LIFO_MEM_TYPE numiter)
 	/* pop off stack; verify sequence */
 	LIFO_MEM_TYPE pop, remain;
 	while ( (remain = lifo_pop(stk, &pop)) != LIFO_ERR) {
-		Z_die_if(--numiter != remain,
+		NB_die_if(--numiter != remain,
 			"--numiter %zu != remain %zu",
 			numiter, remain);
-		Z_die_if(pop != remain,
+		NB_die_if(pop != remain,
 			"pop %zu != remain %zu",
 			pop, remain);
 	}		
 
-out:
+die:
 	lifo_free(stk);
 	return err_cnt;
 }
 
-
-#undef Z_LOG_LVL
-#define Z_LOG_LVL (Z_err | Z_inf | Z_wrn)
 
 /*	main()
 */
@@ -61,7 +58,7 @@ int main()
 			statement in test_many() ????
 		*/
 		nlc_timing_stop(elapsed);
-		Z_log(Z_inf, "%zu stack pushes in %fs",
+		NB_inf("%zu stack pushes in %fs",
 			numiter, nlc_timing_cpu(elapsed));
 	}
 
