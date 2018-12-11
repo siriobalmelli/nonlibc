@@ -4,6 +4,7 @@ tests = [
 	'binhex_test.c',
 	'lifo_test.c',
 	'messenger_test.c',
+	'ndebug_test.c',
 	'nlc_urand_test.c',
 	'nmath_test.c',
 	'npath_test.c',

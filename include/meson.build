@@ -21,6 +21,8 @@ headers = [ 'nonlibc.h',
     'npath.h',
     'pcg_rand.h',
     'posigs.h',
+
+    'ndebug.h',
     'zed_dbg.h'
 ]
 

@@ -1,6 +1,8 @@
 #ifndef zed_dbg_h_
 #define zed_dbg_h_
 
+#warning "zed_dbg.h is deprecated. Please switch to 'ndebug.h'."
+
 /*	zed_dbg.h	control-flow and print macros for C
 
 The purpose of this library is to provide simple macros which abstract away
