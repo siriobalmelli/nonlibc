@@ -62,7 +62,7 @@ static void __attribute__ ((constructor)) ND_start()
  * - print instrumentation
  * - 'errno' is printed if set, AND THEN RESET.
  */
-#define	NB_LOG(FD, PREFIX, MESSAGE, ...) \
+#define NB_LOG(FD, PREFIX, MESSAGE, ...) \
 	NB_PRN(FD, "[%s] %10s:%03d +%-15s\t:: " MESSAGE "\n", \
 		PREFIX, basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
 	if (errno) { \
@@ -76,7 +76,7 @@ static void __attribute__ ((constructor)) ND_start()
  * - elide file, line, function and errno info
  * - avoid logging at all if message is null
  */
-#define	NB_LOG(FD, PREFIX, MESSAGE, ...) \
+#define NB_LOG(FD, PREFIX, MESSAGE, ...) \
 	NB_PRN(FD, MESSAGE "\n", ##__VA_ARGS__);
 #endif
 

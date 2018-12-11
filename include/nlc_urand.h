@@ -44,12 +44,12 @@ die:
 
 	/* preference: use the proper syscall */
 	#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
-		#ifdef HAVE_LINUX_GETRANDOM                                                  
-			#include <linux/random.h>                                                   
+		#ifdef HAVE_LINUX_GETRANDOM
+			#include <linux/random.h>
 			#define nlc_urand_(buf, len) \
 				getrandom(buf, len, 0)
 		#endif
-	#endif     
+	#endif
 /* TODO: BSD arc4random ? */
 #endif
 
@@ -66,7 +66,7 @@ Get bytes from system pseudo-RNG; put them in '*buf'
 Returns number of bytes written;
 	may be less than requested: 0 OR -1 on error!
 
-NOTE: 
+NOTE:
 Recommended usage is to use this function to get a SMALL amount of
 	randomness from the system.
 If you need a lot of random data it's preferrable (and much faster!) to

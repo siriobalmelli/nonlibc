@@ -30,7 +30,7 @@ int	test_many(LIFO_MEM_TYPE numiter)
 		NB_die_if(pop != remain,
 			"pop %zu != remain %zu",
 			pop, remain);
-	}		
+	}
 
 die:
 	lifo_free(stk);

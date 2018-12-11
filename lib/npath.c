@@ -154,11 +154,11 @@ char *n_join(const char *dir_name, const char *base_name)
 	/* dir_name trails with a separator: omit the separator */
 	if (dir_len && dir_name[dir_len -1] == n_sep) {
 		sprintf(ret, "%s%s", dir_name, base_name);
-	
+
 	/* classical case: concatenate dir_name, separator and base_name */
 	} else if (dir_len) {
 		sprintf(ret, "%s%c%s", dir_name, n_sep, base_name);
-	
+
 	/* no dir_name: return base_name */
 	} else {
 		sprintf(ret, "%s", base_name);

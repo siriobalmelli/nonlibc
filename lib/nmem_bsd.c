@@ -21,7 +21,7 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 	if (!tmp_dir)
 		tmp_dir = "/tmp";
 	tmpfile = n_join(tmp_dir, ".temp_XXXXXX");
-	
+
 
 	/* open an fd */
 	out->o_flags = 0;
@@ -67,7 +67,7 @@ void nmem_free(struct nmem *nm, const char *deliver_path)
 		char path[MAXPATHLEN];
 		NB_die_if((
 			fcntl(nm->fd, F_GETPATH, path)
-			) == -1, "");		
+			) == -1, "");
 		NB_die_if((
 			rename(path, deliver_path)
 			) == -1, "%s -> %s", path, deliver_path);

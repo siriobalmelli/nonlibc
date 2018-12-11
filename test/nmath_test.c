@@ -48,7 +48,7 @@ int test_nm_next_pow2()
 	/* non-power-of-2 values should be promoted to the next power of 2 */
 	NB_err_if(nm_next_pow2_32(33) != 64, "%"PRIu32, nm_next_pow2_32(33));
 	NB_err_if(nm_next_pow2_32(63) != 64, "%"PRIu32, nm_next_pow2_32(63));
-	
+
 	/* Repeat checks for 64-bit version.
 	*/
 	NB_err_if(nm_next_pow2_64(0) != 0, "%"PRIu64, nm_next_pow2_64(0));
@@ -76,19 +76,19 @@ int test_nm_next_mult()
 	int err_cnt = 0;
 
 	/* exact (prime, odd, even) */
-	NB_err_if(nm_next_mult32(503, 503) != 503, "%"PRIu32, nm_next_mult32(503, 503));	
-	NB_err_if(nm_next_mult64(3, 3) != 3, "%"PRIu64, nm_next_mult64(3, 3));	
-	NB_err_if(nm_next_mult64(42, 42) != 42, "%"PRIu64, nm_next_mult64(42, 42));	
+	NB_err_if(nm_next_mult32(503, 503) != 503, "%"PRIu32, nm_next_mult32(503, 503));
+	NB_err_if(nm_next_mult64(3, 3) != 3, "%"PRIu64, nm_next_mult64(3, 3));
+	NB_err_if(nm_next_mult64(42, 42) != 42, "%"PRIu64, nm_next_mult64(42, 42));
 
 	/* divides evenly (prime, odd, even) */
-	NB_err_if(nm_next_mult32(503 * 2, 503) != 503 * 2, "%"PRIu32, nm_next_mult32(503 * 2, 503));	
-	NB_err_if(nm_next_mult64(3 * 3, 3) != 3 * 3, "%"PRIu64, nm_next_mult64(3 * 3, 3));	
-	NB_err_if(nm_next_mult64(42 * 4, 42) != 42 * 4, "%"PRIu64, nm_next_mult64(42 * 4, 42));	
+	NB_err_if(nm_next_mult32(503 * 2, 503) != 503 * 2, "%"PRIu32, nm_next_mult32(503 * 2, 503));
+	NB_err_if(nm_next_mult64(3 * 3, 3) != 3 * 3, "%"PRIu64, nm_next_mult64(3 * 3, 3));
+	NB_err_if(nm_next_mult64(42 * 4, 42) != 42 * 4, "%"PRIu64, nm_next_mult64(42 * 4, 42));
 
 	/* divides unevenly (prime, odd, even) */
-	NB_err_if(nm_next_mult32(503 +1, 503) != 503 * 2, "%"PRIu32, nm_next_mult32(503 +1, 503));	
-	NB_err_if(nm_next_mult64(3 +2, 3) != 3 * 2, "%"PRIu64, nm_next_mult64(3 +2, 3));	
-	NB_err_if(nm_next_mult64(42 +3, 42) != 42 * 2, "%"PRIu64, nm_next_mult64(42 +3, 42));	
+	NB_err_if(nm_next_mult32(503 +1, 503) != 503 * 2, "%"PRIu32, nm_next_mult32(503 +1, 503));
+	NB_err_if(nm_next_mult64(3 +2, 3) != 3 * 2, "%"PRIu64, nm_next_mult64(3 +2, 3));
+	NB_err_if(nm_next_mult64(42 +3, 42) != 42 * 2, "%"PRIu64, nm_next_mult64(42 +3, 42));
 
 	return err_cnt;
 }

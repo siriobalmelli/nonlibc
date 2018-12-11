@@ -54,7 +54,7 @@ int test_big_random()
 
 	uint64_t seeds[2];
 
-	/* get seeds and generate random memory */	
+	/* get seeds and generate random memory */
 	NB_die_if(nlc_urand(seeds, sizeof(seeds)) != sizeof(seeds), "");
 	pcg_randset(mem_a, size, seeds[0], seeds[1]);
 	NB_die_if(nlc_urand(seeds, sizeof(seeds)) != sizeof(seeds), "");
@@ -65,7 +65,7 @@ int test_big_random()
 die:
 	free(mem_a);
 	free(mem_b);
-	return err_cnt;	
+	return err_cnt;
 }
 
 

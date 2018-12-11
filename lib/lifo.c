@@ -16,7 +16,7 @@ struct lifo	*lifo_new()
 	NB_die_if(!(ret = malloc(LIFO_GROW)),
 		"malloc %d fail", LIFO_GROW);
 #endif
-	
+
 	ret->next = 0;
 	ret->mem_len = LIFO_GROW - sizeof(struct lifo);
 

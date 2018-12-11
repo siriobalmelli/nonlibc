@@ -65,7 +65,7 @@ int equivalence()
 
 	for (uint64_t i=0; i < NLC_ARRAY_LEN(phrases); i++) {
 		/* hash entire phrase in a single operation */
-		uint64_t line_len = strlen(phrases[i]);	
+		uint64_t line_len = strlen(phrases[i]);
 		uint64_t hash_a = fnv_hash64(0, (uint8_t *)phrases[i], line_len);
 
 		/* initialize */

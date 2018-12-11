@@ -57,7 +57,7 @@ void *tx_thread(void* arg)
 	for (int x = 0; x < ITERS; x++) {
 		header->len = pcg_rand_bound(&rnd, max_len);
 		pcg_set(&rnd, header->bytes, header->len);
-		*hash = fnv_hash64(hash, header->bytes, header->len); 
+		*hash = fnv_hash64(hash, header->bytes, header->len);
 		/* Zero out everything after len in data */
 		//memset(&header->bytes[header->len], 0, max_len - header->len);
 

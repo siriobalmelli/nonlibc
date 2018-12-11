@@ -9,17 +9,17 @@ import os
 import filecmp
 import collections as col
 
-ncp = 'util/ncp' 
+ncp = 'util/ncp'
 test_dir = 'test_copy/'
 
 input_files = [ 'copy.bin', 'copy_one.bin', 'copy_two.bin', 'copy_three.bin', 'copy_four.bin' ]
-output_files = [ 'no_flags.copy', 'verbose.copy', 'test_copy/no_flags.copy', 
+output_files = [ 'no_flags.copy', 'verbose.copy', 'test_copy/no_flags.copy',
 		'test_copy/verbose.copy', 'test_copy/copy_one.bin', 'test_copy/copy_two.bin',
 		'test_copy/copy_three.bin', 'test_copy/copy_four.bin' ]
 
 # No output is valid, so we add it to the list.
 verbose_output = [ '', '\'copy.bin\' -> \'verbose.copy\'',
-				'\'no_flags.copy\' -> \'test_copy/no_flags.copy\'\n\'verbose.copy\' -> \'test_copy/verbose.copy\'', 
+				'\'no_flags.copy\' -> \'test_copy/no_flags.copy\'\n\'verbose.copy\' -> \'test_copy/verbose.copy\'',
 				'\'copy_one.bin\' -> \'test_copy/copy_one.bin\'\n\'copy_two.bin\' -> \'test_copy/copy_two.bin\'',
 				'\'copy_three.bin\' -> \'test_copy/copy_three.bin\'',
 				'\'copy_four.bin\' -> \'test_copy/copy_four.bin\'']
@@ -33,14 +33,14 @@ def create_random_file(filename):
 		print(err.cmd)
 		exit(1)
 
-def ncp_copy(cmds, ncp): 
+def ncp_copy(cmds, ncp):
 	'''copy a file using cmds"'''
 	try:
 		cmds.insert(0, ncp)
 		sub = subprocess.run(cmds,
 				stdout=subprocess.PIPE, stderr=subprocess.PIPE,
 				shell=False, check=True);
-		print(sub.args)	
+		print(sub.args)
 		return sub.stdout.decode('ascii'), sub.stderr.decode('ascii')
 	except subprocess.CalledProcessError as err:
 		print(err.cmd)
@@ -54,7 +54,7 @@ def delete_directory():
 		sub = subprocess.run(['rm', '-rf', test_dir],
 				stdout=subprocess.PIPE, stderr=subprocess.PIPE,
 				shell=False, check=True);
-		print(sub.args)	
+		print(sub.args)
 	except subprocess.CalledProcessError as err:
 		print(err.cmd)
 		print(err.stdout.decode('ascii'))
@@ -85,11 +85,11 @@ def check_output_files():
 			print('file {0} does not exist'.format(out_file))
 			exit(1)
 
-	# delete all files if all checks have succeeded	
+	# delete all files if all checks have succeeded
 	for f in output_files:
 		os.remove(f)
 	for f in input_files:
-		os.remove(f)	
+		os.remove(f)
 	delete_directory()
 
 # Use OrderedDict such that iterations are always in the order of elements inserted.
@@ -122,7 +122,7 @@ if __name__ == "__main__":
 
 	for f in input_files:
 		create_random_file(f)
-	
+
 	for k,v in cmds.items():
 		stdout, stderr = ncp_copy(v, ncp)
 		# Check output, if any

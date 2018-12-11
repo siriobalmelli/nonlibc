@@ -2,7 +2,7 @@
 #define binhex_h_
 
 /*	binhex.h
- * 
+ *
  * The library of binary -> hex and hex -> binary functions.
  *
  * (c) Sirio Balmelli

@@ -34,7 +34,7 @@ def fnvsum_stdin(string, expect_fnv):
         print(err.stdout.decode('ascii'))
         print(err.stderr.decode('ascii'))
         exit(1)
-    
+
     res = int(sub.stdout.decode('ascii')[:16], 16)
     if res != expect_fnv:
         print('%xd != %xd;  %s' % (res, expect_fnv, string), sys.stderr)
@@ -59,7 +59,7 @@ def fnvsum_file(string, expect_fnv):
         print(err.stdout.decode('ascii'))
         print(err.stderr.decode('ascii'))
         exit(1)
-    
+
     res = int(sub.stdout.decode('ascii')[:16], 16)
     if res != expect_fnv:
         print('%xd != %xd;  %s' % (res, expect_fnv, string), sys.stderr)

@@ -63,7 +63,7 @@ int do_file(const char *file)
 		"error stat()ing '%s'", file);
 	NB_die_if(!S_ISREG(st.st_mode),
 		"'%s' not a regular file", file);
-	
+
 	/* init hash */
 	uint64_t hash = fnv_hash64(NULL, NULL, 0);
 
