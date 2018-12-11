@@ -6,6 +6,7 @@
  * Choice of prefix "NB" is a nod to Latin "Nota Bene" but can also stand for
  * "Nonlibc Buffer" or just "NdeBug" (your pick).
  *
+ *
  * Table of statements:
  * | PREFIX  | FD     | NDEBUG* | STATEMENTS            | SIDE EFFECTS         |
  * | ------- | ------ | ------- | --------------------- | -------------------- |
@@ -16,6 +17,44 @@
  * | DIE     | fderr  |         | NB_die(), NB_die_if() | err_cnt++; goto die; |
  * * = if NDEBUG is defined, certain statements are NOPs (discarded by cpp).
  *
+ *
+ * ON THE PHILOSOPHY OF GOTOs
+ *
+ * This library provides NB_die() and NB_die_if() statements which:
+ * - output an error message
+ * - increment an 'err_cnt' variable
+ * - `goto out`
+ *
+ * If you haven't spent a fair amount in the trenches writing C,
+ * you may still have jammed in your head the mantra of
+ * "You must never goto, Simba".
+ * This point of view is understandable, but will get you in trouble
+ * when it comes to error handling.
+ *
+ * Somewhere in the innards of a function, you may encounter an error
+ * (you DO check the return values of the functions you call, right?),
+ * or you may yourself decide something isn't kosher.
+ * I wish to posit that THE right thing to do here is a goto.
+ *
+ * Are you looking at your screen in horror? Good - I have your attention.
+ *
+ * Let me explain:
+ * You see, the function you're in the middle of has likely caused at least a couple
+ * state changes: you may have allocated memory, opened a file descriptor,
+ * written data somewhere, etc.
+ * If there's multiple places in your function where you check a value for error;
+ * it's very tricky and kludgy to write bulletproof error handling code
+ * in each one of these locations.
+ *
+ * So how about this instead:
+ * - put ONE block of error-handling instructions at the bottom
+ *   of your function (usually under the return statement)
+ * - label that block `die:`
+ * - jump there any time something bad happens
+ *
+ * "Hey! that sounds like a Try/Catch block in [favorite language]!"
+ *
+ * Precisely.
  * (c) 2018 Sirio Balmelli
  */
 
@@ -34,8 +73,10 @@ static int err_cnt = 0;
 static int fdout;
 static int fderr;
 
-/* output function is overridden at compile-time only */
+/* output function can be overridden, but at compile-time only */
+#ifndef NB_PRN
 #define NB_PRN dprintf
+#endif
 
 
 /*	ND_start()
