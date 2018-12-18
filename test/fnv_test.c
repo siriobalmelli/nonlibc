@@ -132,14 +132,14 @@ int	speed()
 	nlc_timing_start(fnv64);
 	uint64_t res64 = fnv_hash64(NULL, large, sz);
 	nlc_timing_stop(fnv64);
-	NB_inf("fnv_hash64 on %zuB: %fs - %"PRIx64,
+	NB_prn("fnv_hash64 on %zuB: %fs - %"PRIx64,
 			sz, nlc_timing_cpu(fnv64), res64);
 
 	/* run FNV32 */
 	nlc_timing_start(fnv32);
 	uint32_t res32 = fnv_hash64(NULL, large, sz);
 	nlc_timing_stop(fnv32);
-	NB_inf("fnv_hash32 on %zuB: %fs - %"PRIx32,
+	NB_prn("fnv_hash32 on %zuB: %fs - %"PRIx32,
 			sz, nlc_timing_cpu(fnv32), res32);
 
 die:

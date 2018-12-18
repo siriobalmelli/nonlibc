@@ -118,7 +118,9 @@ static void __attribute__ ((constructor)) ND_start()
  * - avoid logging at all if message is null
  */
 #define NB_LOG(FD, PREFIX, MESSAGE, ...) \
-	NB_PRN(FD, MESSAGE "\n", ##__VA_ARGS__);
+	if (MESSAGE[0] != '\0') { \
+		NB_PRN(FD, MESSAGE "\n", ##__VA_ARGS__); \
+	}
 #endif
 
 
