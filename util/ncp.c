@@ -23,20 +23,20 @@ static int force = 0;
 static int verbose = 0;
 
 
-/*	print_usage()
-*/
-void print_usage(char *pgm_name)
-{
-	fprintf(stderr, "Usage: %1$s [OPTION]... SOURCE_FILE DEST_FILE\n\
-  or:  %1$s [OPTION]... SOURCE_FILE... DEST_DIR/\n\
-An analog of 'cp' using nmem(3) zero-copy I/O for speed.\n\
-\n\
-Options:\n\
-\t-v, --verbose	:	list each file being copied\n\
-\t-f, --force	:	overwrite destination file(s) if existing\n\
-\t-h, --help	:	print usage and exit\n",
-		pgm_name);
-}
+/* Use as a printf prototype.
+ * Expects 'program_name' as a string variable.
+ */
+static const char *usage =
+"Usage:\n"
+"\t%1$s [OPTION]... SOURCE_FILE DEST_FILE\n"
+"or:\t%1$s [OPTION]... SOURCE_FILE... DEST_DIR/\n"
+"\n"
+"An analog of 'cp' using nmem(3) zero-copy I/O for speed.\n"
+"\n"
+"Options:\n"
+"\t-v, --verbose	:	list each file being copied\n"
+"\t-f, --force	:	overwrite destination file(s) if existing\n"
+"\t-h, --help	:	print usage and exit\n";
 
 
 /*	cp()
@@ -113,20 +113,17 @@ int main(int argc, char **argv)
 					NB_inf("force");
 				break;
 			case 'h':
-				print_usage(argv[0]);
+				fprintf(stderr, usage, argv[0]);
 				goto die;
 			default:
-				print_usage(argv[0]);
-				NB_die("option '%c' invalid", opt);
+				NB_die(""); /* libc will alreadyc complain about invalid option */
 		}
 	}
 
 	/* sanity check file arguments */
 	int count = argc - optind;
-	if (count < 2) {
-		print_usage(argv[0]);
+	if (count < 2)
 		NB_die("missing SOURCE_FILE or DEST_FILE");
-	}
 
 	/* SOURCE_FILE DEST_FILE */
 	dst_path = argv[optind + 1];
@@ -148,5 +145,7 @@ int main(int argc, char **argv)
 	}
 
 die:
+	if (err_cnt)
+		fprintf(stderr, usage, argv[0]);
 	return err_cnt;
 }
