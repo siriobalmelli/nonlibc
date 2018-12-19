@@ -97,26 +97,26 @@ int main(int argc, char **argv)
 		{ "verbose",	no_argument,	0,	'v'},
 		{ "force",	no_argument,	0,	'f'},
 		{ "help",	no_argument,	0,	'h'},
+		{0, 0, 0, 0}
 	};
 
 	while ((opt = getopt_long(argc, argv, "vfh", long_options, NULL)) != -1) {
-		switch(opt)
-		{
-			case 'v':
-				verbose++;
-				if (verbose >= 2)
-					NB_inf("verbose");
-				break;
-			case 'f':
-				force = 1;
-				if (verbose >= 2)
-					NB_inf("force");
-				break;
-			case 'h':
-				fprintf(stderr, usage, argv[0]);
-				goto die;
-			default:
-				NB_die(""); /* libc will alreadyc complain about invalid option */
+		switch(opt) {
+		case 'v':
+			verbose++;
+			if (verbose >= 2)
+				NB_inf("verbose");
+			break;
+		case 'f':
+			force = 1;
+			if (verbose >= 2)
+				NB_inf("force");
+			break;
+		case 'h':
+			fprintf(stderr, usage, argv[0]);
+			goto die;
+		default:
+			NB_die(""); /* libc will already complain about invalid option */
 		}
 	}
 

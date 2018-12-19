@@ -22,13 +22,14 @@ uint64_t	fnv_hash64(uint64_t *hash, const void *data, size_t data_len)
 		h = *hash;
 	else
 		h = 14695981039346656037u;
-	if (!data)
-		return h;
-	const uint8_t *d = data;
 
-	/* hash the things! */
-	for (size_t i=0; i < data_len; i++)
-		h = (d[i] ^h) * prime;
+	if (data) {
+		const uint8_t *d = data;
+
+		/* hash the things! */
+		for (size_t i=0; i < data_len; i++)
+			h = (d[i] ^h) * prime;
+	}
 
 	return h;
 }
@@ -43,13 +44,42 @@ uint32_t	fnv_hash32(uint32_t *hash, const void *data, size_t data_len)
 		h = *hash;
 	else
 		h = 2166136261u;
-	if (!data)
-		return h;
-	const uint8_t *d = data;
 
-	/* hash the things! */
-	for (size_t i=0; i < data_len; i++)
-		h = (d[i] ^h) * prime;
+	if (data) {
+		const uint8_t *d = data;
 
+		/* hash the things! */
+		for (size_t i=0; i < data_len; i++)
+			h = (d[i] ^h) * prime;
+	}
+
+	return h;
+}
+
+/*	fnv_hash16()
+ * Implement xor-folding of 32-bit hash to produce 16-bit hash.
+ * See http://www.isthe.com/chongo/tech/comp/fnv/index.html#xor-fold
+ */
+uint16_t	fnv_hash16(uint16_t *hash, const void *data, size_t data_len)
+{
+	static const uint32_t prime = 16777619u;
+
+	/* get start state, if NULL then initialize */
+	uint32_t h;
+	if (hash)
+		h = *hash;
+	else
+		h = 2166136261u;
+
+	if (data) {
+		const uint8_t *d = data;
+
+		/* hash the things! */
+		for (size_t i=0; i < data_len; i++)
+			h = (d[i] ^h) * prime;
+	}
+
+	/* fold before returning */
+	h = (h >> 16) ^ (h & 0xffff);
 	return h;
 }
