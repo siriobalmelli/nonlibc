@@ -10,7 +10,7 @@
 
 /*	rx_callback()
  */
-void rx_callback(int fd, uint32_t events, void *context)
+void rx_callback(int fd, uint32_t events, void *context, struct epoll_track *tk)
 {
 	NB_die_if(!events, "events mask not propagated to callback");
 
@@ -56,13 +56,13 @@ int main()
 		int *curr_pipe = &pvc[i*2];
 		NB_die_if(pipe(curr_pipe), "");
 		NB_die_if(eptk_register(tk, curr_pipe[0], EPOLLIN,
-				rx_callback, &counters[i])
+				rx_callback, &counters[i], NULL)
 			, "");
 	}
 
 	/* try and register the last one again: should modify the existing one only */
 	NB_die_if(eptk_register(tk, pvc[(PIPE_COUNT-1)*2], EPOLLIN,
-			rx_callback, &counters[(PIPE_COUNT-1)])
+			rx_callback, &counters[(PIPE_COUNT-1)], NULL)
 		, "");
 	NB_die_if(eptk_count(tk) != PIPE_COUNT,
 		"count %zu expected PIPE_COUNT of %d", eptk_count(tk), PIPE_COUNT);
@@ -106,7 +106,7 @@ int main()
 		) != 1, "removed %d instead of 1", ret);
 
 die:
-	eptk_free(tk, false);
+	eptk_free(tk);
 	for (int i=0; i < NLC_ARRAY_LEN(pvc); i++) {
 		if (pvc[i] != -1)
 			close(pvc[i]);

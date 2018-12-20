@@ -27,25 +27,32 @@ typedef union {
 /*	eptk_callback_t
  * just for legibility
  */
-typedef void (*eptk_callback_t) (int fd, uint32_t events, eptk_context_t context);
+struct epoll_track; /* forward-declare only, see below */
+typedef void (*eptk_callback_t) (int fd,
+				uint32_t events,
+				eptk_context_t context,
+				struct epoll_track *tk);
 
 
-/*	struct epoll_track_cb
- * metadata to admin epoll an epoll entry
+/*	epoll_track_cb
+ * Metadata to admin epoll an epoll entry.
  * @fd		file descriptor to be polled
  * @events	e.g. (EPOLLIN | EPOLLOUT) see 'man epoll_ctl'
  * @callback	function for eptk_pwait_exec() to call when event received
  * @context	passed to callback on every invocation
+ * @destructor	(optional) executed on node(s) by eptk_free() and eptk_remove()
  */
 struct epoll_track_cb {
 	struct cds_hlist_node	node;
-	int		fd;
-	uint32_t	events;
-	eptk_context_t	context;
-	eptk_callback_t	callback;
+
+	int			fd;
+	uint32_t		events;
+	eptk_callback_t		callback;
+	eptk_context_t		context;
+	void			(*destructor)(eptk_context_t);
 };
 
-/*	struct epoll_track
+/*	epoll_track
  * @epfd	epoll fd
  * @rcnt	number of children (each has a 'cb' and 'report')
  * @report	epoll writes events here
@@ -58,18 +65,21 @@ struct epoll_track {
 };
 
 
-NLC_PUBLIC void			eptk_free(struct epoll_track *tk, bool close_children);
+NLC_PUBLIC void			eptk_free(struct epoll_track *tk);
 NLC_PUBLIC struct epoll_track	*eptk_new();
 
 NLC_PUBLIC int			eptk_register(struct epoll_track *tk,
 						int fd,
 						uint32_t events,
 						eptk_callback_t callback,
-						eptk_context_t context);
+						eptk_context_t context,
+						void (*destructor)(eptk_context_t));
+
 NLC_INLINE size_t		eptk_count(struct epoll_track *tk)
 {
 	return tk->rcnt;
 }
+
 NLC_PUBLIC int			eptk_remove(struct epoll_track *tk, int fd);
 
 NLC_PUBLIC int			eptk_pwait_exec(struct epoll_track *tk,

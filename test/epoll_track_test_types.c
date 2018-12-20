@@ -21,7 +21,7 @@ const char *nonsense = "hello world";
 
 /*	generic_callback()
  */
-void generic_callback(int fd, uint32_t events, uint64_t context)
+void generic_callback(int fd, uint32_t events, uint64_t context, struct epoll_track *tk)
 {
 	NB_err_if((uint64_t)context != test_context,
 		"type handling broken: %lu != %lu",
@@ -53,7 +53,10 @@ int main()
 		tk = eptk_new()
 		), "");
 	/* register reader */
-	NB_die_if(eptk_register(tk, pvc[0], EPOLLIN, generic_callback, test_context), "");
+	NB_die_if(
+		eptk_register(tk, pvc[0], EPOLLIN,
+			generic_callback, test_context, NULL)
+		, "");
 
 	/* write nonsense */
 	size_t ret = strlen(nonsense);
@@ -63,7 +66,7 @@ int main()
 	NB_die_if(eptk_pwait_exec(tk, 1, NULL) != 1, "");
 
 die:
-	eptk_free(tk, false);
+	eptk_free(tk);
 	for (int i=0; i < NLC_ARRAY_LEN(pvc); i++) {
 		if (pvc[i] != -1)
 			close(pvc[i]);

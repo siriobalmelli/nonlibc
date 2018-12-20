@@ -34,7 +34,7 @@ void *tx_thread(void* arg)
 	NB_die_if(!(
 		header = malloc(MG_MAX)
 		), "MG_MAX %zu", MG_MAX);
-	header->thread_id = (unsigned int)arg;
+	header->thread_id = (unsigned int)(uintptr_t)arg;
 	NB_inf("tx %u", header->thread_id);
 
 	/* Generate variable-sized messages,

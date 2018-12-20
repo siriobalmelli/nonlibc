@@ -5,7 +5,7 @@
 /*	eptk_free()
  * @close_children	exec close() on all tracked fds
  */
-void eptk_free(struct epoll_track *tk, bool close_children)
+void eptk_free(struct epoll_track *tk)
 {
 	if (!tk)
 		return;
@@ -15,9 +15,9 @@ void eptk_free(struct epoll_track *tk, bool close_children)
 	struct epoll_track_cb *curr = NULL, *e = NULL;
 	/* use _safe_ version: freeing while walking */
 	cds_hlist_for_each_entry_safe_2(curr, e, &tk->cb_list, node) {
-		if (close_children)
-			close(curr->fd);
 		cds_hlist_del(&curr->node);
+		if (curr->destructor)
+			curr->destructor(curr->context);
 		free(curr);
 	}
 
@@ -44,7 +44,7 @@ struct epoll_track *eptk_new()
 
 	return tk;
 die:
-	eptk_free(tk, false);
+	eptk_free(tk);
 	return NULL;
 }
 
@@ -52,13 +52,14 @@ die:
  * Register a new fd for tracking with epoll.
  * @fd		fd to be tracked using epoll
  * @events	events to be tracked, see 'man epoll_ctl'
+ * @callback	called when 'events' trigger epoll
  * @context	optional opaque value to be passed to callback
- * @callback
+ * @destructor	(optional) executed on node(s) by eptk_free() and eptk_destroy()
  * Returns 0 on success
  */
 int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
-		void (*callback) (int fd, uint32_t events, eptk_context_t context),
-		eptk_context_t context)
+		eptk_callback_t callback, eptk_context_t context,
+		void (*destructor)(eptk_context_t))
 {
 	int err_cnt = 0;
 	int e_flag = EPOLL_CTL_ADD;
@@ -94,6 +95,7 @@ int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
 	new_cb->events = events;
 	new_cb->callback = callback;
 	new_cb->context = context;
+	new_cb->destructor = destructor;
 	struct epoll_event ep_in = {
 		.data.ptr = new_cb,
 		.events = new_cb->events
@@ -136,6 +138,8 @@ int eptk_remove(struct epoll_track *tk, int fd)
 			epoll_ctl(tk->epfd, EPOLL_CTL_DEL, curr->fd, NULL)
 			, "epfd %d remove fail for fd %d", tk->epfd, curr->fd);
 		removed++;
+		if (curr->destructor)
+			curr->destructor(curr->context);
 		free(curr);
 	}
 
@@ -158,7 +162,7 @@ int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask
 	/* -1 is less than 0 ;) */
 	for (int i=0; i < ret; i++) {
 		struct epoll_track_cb *cb = tk->report[i].data.ptr;
-		cb->callback(cb->fd, tk->report[i].events, cb->context);
+		cb->callback(cb->fd, tk->report[i].events, cb->context, tk);
 	}
 	return ret;
 }

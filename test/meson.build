@@ -15,7 +15,8 @@ tests = [
 if host_machine.system() == 'linux'
   tests += [
 	'epoll_track_test.c',
-	'epoll_track_test_types.c'
+	'epoll_track_test_types.c',
+	'epoll_track_test_destructor.c'
   ]
 endif
 

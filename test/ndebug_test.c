@@ -98,10 +98,12 @@ struct malloc_err_example *malloc_error()
 	NB_die_if(!(
 		ret->ptr_a = malloc(sizeof(uint64_t))
 		), "could not malloc() %zu bytes", sizeof(uint64_t));
+
+	/* 1 less than the number which will throw a compiler warning :P */
+	size_t insane = 9223372036854775806;
 	NB_die_if(!(
-		ret->ptr_b = malloc(1UL << (sizeof(long) * 8 - 1))
-		), "could not malloc() %lu (insane amount) bytes",
-		1UL << (sizeof(long) * 8 - 1));
+		ret->ptr_b = malloc(insane)
+		), "could not malloc() %lu (insane amount) bytes", insane);
 
 	/* successful return */
 	return ret;

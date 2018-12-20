@@ -69,7 +69,7 @@
  * These can be ignored for basic functionality,
  * or overidden on a per-function basis.
  */
-static int err_cnt = 0;
+static __attribute__((unused)) int err_cnt = 0;
 static int fdout;
 static int fderr;
 
