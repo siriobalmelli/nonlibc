@@ -67,7 +67,7 @@ die:
 
 /*	subsys_callback()
  */
-void subsys_callback(int fd, uint32_t events, void *context, struct epoll_track *tk)
+int subsys_callback(int fd, uint32_t events, void *context)
 {
 	struct subsys *sub = context;
 	ssize_t res = read(fd, sub->resource, sub->resource_sz);
@@ -75,16 +75,16 @@ void subsys_callback(int fd, uint32_t events, void *context, struct epoll_track 
 	/* Error or closure means we should close and deallocate;
 	 * this is done when eptk_remove() calls our destructor.
 	 */
-	if (res <= 0) {
-		eptk_remove(tk, fd);
-		return;
-	}
+	if (res <= 0)
+		return 1;
 
 	ssize_t check = write(sub->outfd, sub->resource, res);
 	NB_err_if(res != check, "I/O fail");
 
 	sub->resource[res] = '\0'; /* force string termination */
 	NB_inf("%s received '%s'", sub->name, sub->resource);
+
+	return 0;
 }
 
 

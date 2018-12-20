@@ -10,8 +10,9 @@
 
 /*	rx_callback()
  */
-void rx_callback(int fd, uint32_t events, void *context, struct epoll_track *tk)
+int rx_callback(int fd, uint32_t events, void *context)
 {
+	int err_cnt = 0;
 	NB_die_if(!events, "events mask not propagated to callback");
 
 	/* accumulator */
@@ -24,8 +25,9 @@ void rx_callback(int fd, uint32_t events, void *context, struct epoll_track *tk)
 		) != sizeof(buf), "read returns %d", ret);
 	/* accumulate received values - will be checked by main */
 	*acc += buf;
+
 die:
-	return;
+	return err_cnt;
 }
 
 

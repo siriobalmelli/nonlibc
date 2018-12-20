@@ -21,8 +21,10 @@ const char *nonsense = "hello world";
 
 /*	generic_callback()
  */
-void generic_callback(int fd, uint32_t events, uint64_t context, struct epoll_track *tk)
+int generic_callback(int fd, uint32_t events, uint64_t context)
 {
+	int err_cnt = 0;
+
 	NB_err_if((uint64_t)context != test_context,
 		"type handling broken: %lu != %lu",
 		(uint64_t)context, test_context);
@@ -33,6 +35,8 @@ void generic_callback(int fd, uint32_t events, uint64_t context, struct epoll_tr
 
 	NB_err_if(strcmp(buf, nonsense),
 		"%s != %s", buf, nonsense);
+
+	return err_cnt;
 }
 
 

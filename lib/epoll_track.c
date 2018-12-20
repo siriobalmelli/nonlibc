@@ -3,7 +3,8 @@
 #include <ndebug.h>
 
 /*	eptk_free()
- * @close_children	exec close() on all tracked fds
+ * Closes epoll socket and frees all callbacks;
+ * executes destructor (if given) else closes fd for each callback.
  */
 void eptk_free(struct epoll_track *tk)
 {
@@ -18,6 +19,8 @@ void eptk_free(struct epoll_track *tk)
 		cds_hlist_del(&curr->node);
 		if (curr->destructor)
 			curr->destructor(curr->context);
+		else
+			close(curr->fd);
 		free(curr);
 	}
 	free(tk);
@@ -48,11 +51,12 @@ die:
 
 /*	eptk_register()
  * Register a new fd for tracking with epoll.
- * @fd		fd to be tracked using epoll
- * @events	events to be tracked, see 'man epoll_ctl'
- * @callback	called when 'events' trigger epoll
- * @context	optional opaque value to be passed to callback
- * @destructor	(optional) executed on node(s) by eptk_free() and eptk_destroy()
+ * @fd		The fd to be tracked using epoll.
+ * @events	Events to be tracked, see 'man epoll_ctl'.
+ * @callback	Called when 'events' trigger epoll.
+ * @context	Opaque value to be passed to 'destructor' and/or 'callback'.
+ * @destructor	(optional) executed on node(s) by eptk_free() and eptk_destroy(),
+ *		if not given, 'fd' will be closed instead.
  * Returns 0 on success
  */
 int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
@@ -111,7 +115,8 @@ die:
 }
 
 /*	eptk_remove()
- * Remove 'fd' from 'tk'.
+ * Remove 'fd' from 'tk';
+ * Executes the associated 'destructor' (if given), otherwise runs close() on the fd.
  * Returns number of records removed.
  */
 int eptk_remove(struct epoll_track *tk, int fd)
@@ -131,6 +136,8 @@ int eptk_remove(struct epoll_track *tk, int fd)
 			, "epfd %d remove fail for fd %d", tk->epfd, curr->fd);
 		if (curr->destructor)
 			curr->destructor(curr->context);
+		else
+			close(curr->fd);
 		free(curr);
 
 		removed++;
@@ -163,7 +170,8 @@ int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask
 	/* -1 is less than 0 ;) */
 	for (int i=0; i < ret; i++) {
 		struct epoll_track_cb *cb = events[i].data.ptr;
-		cb->callback(cb->fd, events[i].events, cb->context, tk);
+		if (cb->callback(cb->fd, events[i].events, cb->context))
+			eptk_remove(tk, cb->fd);
 	}
 	return ret;
 }
