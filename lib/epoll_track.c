@@ -20,8 +20,6 @@ void eptk_free(struct epoll_track *tk)
 			curr->destructor(curr->context);
 		free(curr);
 	}
-
-	free(tk->report);
 	free(tk);
 }
 
@@ -59,7 +57,7 @@ die:
  */
 int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
 		eptk_callback_t callback, eptk_context_t context,
-		void (*destructor)(eptk_context_t))
+		eptk_destructor_t destructor)
 {
 	int err_cnt = 0;
 	int e_flag = EPOLL_CTL_ADD;
@@ -76,18 +74,12 @@ int eptk_register(struct epoll_track *tk, int fd, uint32_t events,
 		}
 	}
 
-	/* if no existing callback found, alloc for a new one */
+	/* if no existing callback found, alloc a new one */
 	if (!new_cb) {
-		/* extend report array */
-		size_t alloc_sz = ++tk->rcnt * sizeof(struct epoll_event);
-		NB_die_if(!(
-			tk->report = realloc(tk->report, alloc_sz)
-			), "fail alloc sz %zu", alloc_sz);
-
-		/* add new callback to list */
 		NB_die_if(!(
 			new_cb = malloc(sizeof(*new_cb))
 			), "fail alloc sz %zu", sizeof(*new_cb));
+		tk->rcnt++;
 	}
 
 	/* register connection */
@@ -137,10 +129,12 @@ int eptk_remove(struct epoll_track *tk, int fd)
 		NB_err_if(
 			epoll_ctl(tk->epfd, EPOLL_CTL_DEL, curr->fd, NULL)
 			, "epfd %d remove fail for fd %d", tk->epfd, curr->fd);
-		removed++;
 		if (curr->destructor)
 			curr->destructor(curr->context);
 		free(curr);
+
+		removed++;
+		tk->rcnt--;
 	}
 
 	return removed;
@@ -157,12 +151,19 @@ int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask
 	/* epoll demands that "maxevents argument must be greater than zero" */
 	if (!tk->rcnt)
 		return 0;
+	/* Allocating event structure on the stack here so that:
+	 * - tk is smaller (no 'void *reports').
+	 * - register/remove code doesn't worry about realloc() which is a massive
+	 *   barrier to multithreading ... everything else is urcu so we don't
+	 *   have to care.
+	 */
+	struct epoll_event *events = alloca(tk->rcnt * sizeof(struct epoll_event));
 
-	int ret = epoll_pwait(tk->epfd, tk->report, tk->rcnt, timeout, sigmask);
+	int ret = epoll_pwait(tk->epfd, events, tk->rcnt, timeout, sigmask);
 	/* -1 is less than 0 ;) */
 	for (int i=0; i < ret; i++) {
-		struct epoll_track_cb *cb = tk->report[i].data.ptr;
-		cb->callback(cb->fd, tk->report[i].events, cb->context, tk);
+		struct epoll_track_cb *cb = events[i].data.ptr;
+		cb->callback(cb->fd, events[i].events, cb->context, tk);
 	}
 	return ret;
 }

@@ -39,7 +39,7 @@ int main()
 	 * int err_cnt = 0;
 	 */
 	struct epoll_track *tk = NULL;
-	int pvc[sizeof(int) * PIPE_COUNT * 2];
+	int pvc[PIPE_COUNT * 2];
 	unsigned int counters[sizeof(unsigned int) * PIPE_COUNT] = { 0 };
 	for (int i=0; i < PIPE_COUNT; i++) {
 		pvc[i] = -1;

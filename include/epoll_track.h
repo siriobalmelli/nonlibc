@@ -32,6 +32,7 @@ typedef void (*eptk_callback_t) (int fd,
 				uint32_t events,
 				eptk_context_t context,
 				struct epoll_track *tk);
+typedef void (*eptk_destructor_t)(eptk_context_t context);
 
 
 /*	epoll_track_cb
@@ -55,25 +56,24 @@ struct epoll_track_cb {
 /*	epoll_track
  * @epfd	epoll fd
  * @rcnt	number of children (each has a 'cb' and 'report')
- * @report	epoll writes events here
  */
 struct epoll_track {
 	struct cds_hlist_head	cb_list;
 	int			epfd;
 	size_t			rcnt;
-	struct epoll_event	*report;
 };
 
 
 NLC_PUBLIC void			eptk_free(struct epoll_track *tk);
 NLC_PUBLIC struct epoll_track	*eptk_new();
 
+
 NLC_PUBLIC int			eptk_register(struct epoll_track *tk,
 						int fd,
 						uint32_t events,
 						eptk_callback_t callback,
 						eptk_context_t context,
-						void (*destructor)(eptk_context_t));
+						eptk_destructor_t destructor);
 
 NLC_INLINE size_t		eptk_count(struct epoll_track *tk)
 {
