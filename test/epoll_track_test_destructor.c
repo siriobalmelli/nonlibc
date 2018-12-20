@@ -105,8 +105,9 @@ int main()
 		tk = eptk_new()
 		), "");
 	/* plumbing */
-	NB_die_if(pipe(us2a) || pipe(a2us)
-		, "pipe2() failed");
+	NB_die_if(
+		pipe(us2a) || pipe(a2us)
+		, "pipe() failed");
 	NB_die_if(!(
 		suba = subsys_new(us2a[0], a2us[1], "sub-a")
 		), "");
@@ -125,16 +126,18 @@ int main()
 	/* verify subsystem ran */
 	char check[sizeof(buf)] = { '\0' };
 	ssize_t ret = read(a2us[0], check, sizeof(buf));
-	NB_die_if(ret != sizeof(buf), "read %zu but expect %zu", ret, sizeof(buf));
-	NB_die_if(strcmp(buf, check), "buf '%s' != check '%s'", buf, check);
+	NB_die_if(ret != sizeof(buf),
+		"read %zu but expect %zu", ret, sizeof(buf));
+	NB_die_if(strcmp(buf, check),
+		"buf '%s' != check '%s'", buf, check);
 	
 	/* trigger closures and run epoll subsystems */
 	close(us2a[1]);
 	eptk_pwait_exec(tk, 1, NULL);
 
 	/* verify subsystem deregistered itself */
-	int subsys_cnt = eptk_count(tk);
-	NB_die_if(subsys_cnt, "%d subsystems have not exited", subsys_cnt);
+	NB_die_if(eptk_count(tk),
+		"%zu subsystems have not exited", eptk_count(tk));
 
 die:
 	eptk_free(tk);
