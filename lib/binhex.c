@@ -67,7 +67,7 @@ size_t	b2hx_u16(const uint16_t *u16, size_t u_cnt, char *hex)
 	};
 	union bits__ tmp;
 	for (int i=0; i < u_cnt; i++) {
-		tmp.u16 = __builtin_bswap16(u16[i]);
+		tmp.u16 = h16tobe(u16[i]);
 		hex[j++]= syms[tmp.u8[0] >>4];
 		hex[j++]= syms[tmp.u8[0] & 0xf];
 		hex[j++]= syms[tmp.u8[1] >>4];
@@ -89,7 +89,7 @@ size_t	b2hx_u32(const uint32_t *u32, size_t u_cnt, char *hex)
 	};
 	union bits__ tmp;
 	for (int i=0; i < u_cnt; i++) {
-		tmp.u32 = __builtin_bswap32(u32[i]);
+		tmp.u32 = h32tobe(u32[i]);
 		hex[j++]= syms[tmp.u8[0] >>4];
 		hex[j++]= syms[tmp.u8[0] & 0xf];
 		hex[j++]= syms[tmp.u8[1] >>4];
@@ -115,7 +115,7 @@ size_t	b2hx_u64(const uint64_t *u64, size_t u_cnt, char *hex)
 	};
 	union bits__ tmp;
 	for (int i=0; i < u_cnt; i++) {
-		tmp.u64 = __builtin_bswap64(u64[i]);
+		tmp.u64 = h64tobe(u64[i]);
 		hex[j++]= syms[tmp.u8[0] >>4];
 		hex[j++]= syms[tmp.u8[0] & 0xf];
 		hex[j++]= syms[tmp.u8[1] >>4];
