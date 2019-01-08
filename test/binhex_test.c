@@ -66,9 +66,9 @@ int test_hx2b()
 	uint8_t ans8[] = {
 		0xff, 0xff, 0xff, 0xA, 0x5, 0x1, 0x7
 	};
-	for (uint_fast16_t i=0; i < sizeof(ans8); i++) {
+	for (int i=0; i < sizeof(ans8); i++) {
 		NB_err_if(hx2b_u8(check8[i]) != ans8[i],
-			"@i=%"PRIuFAST16"  :  %hhx != %s",
+			"@i=%d  :  %hhx != %s",
 			i, hx2b_u8(check8[i]), check8[i]);
 	}
 
@@ -79,9 +79,9 @@ int test_hx2b()
 	uint16_t ans16[] = {
 		0xff, 0xa, 0x1234, 0x555, 0x004
 	};
-	for (uint_fast16_t i=0; i < sizeof(ans16) / sizeof(ans16[0]); i++) {
+	for (int i=0; i < sizeof(ans16) / sizeof(ans16[0]); i++) {
 		NB_err_if(hx2b_u16(check16[i]) != ans16[i],
-			"@i=%"PRIuFAST16"  :  %hx != %s",
+			"@i=%d  :  %hx != %s",
 			i, hx2b_u16(check16[i]), check16[i]);
 	}
 
@@ -108,27 +108,55 @@ int test_b2hx()
 
 	char hex[33];
 
-	NB_err_if(b2hx_u16(&n_16, 1, hex) != 5, "");
-	NB_err_if(strcmp(hex, hex_16), "'%s' not expected '%s'", hex, hex_16);
-	NB_err_if(hx2b_u16(hex_16) != n_16,
+	NB_err_if(b2hx_u16(&n_16, 1, hex)
+		!= 5, "");
+	NB_err_if(strcmp(hex, hex_16)
+		, "'%s' not expected '%s'", hex, hex_16);
+	NB_err_if(hx2b_u16(hex_16)
+		!= n_16,
 		"%"PRIu16" != %"PRIu16, hx2b_u16(hex_16), n_16);
 
-	NB_err_if(b2hx_u32(&n_32, 1, hex) != 9, "");
-	NB_err_if(strcmp(hex, hex_32), "'%s' not expected '%s'", hex, hex_32);
-	NB_err_if(hx2b_u32(hex_32) != n_32,
+	NB_err_if(b2hx_u32(&n_32, 1, hex)
+		!= 9, "");
+	NB_err_if(strcmp(hex, hex_32)
+		, "'%s' not expected '%s'", hex, hex_32);
+	NB_err_if(hx2b_u32(hex_32)
+		!= n_32,
 		"%"PRIu32" != %"PRIu32, hx2b_u32(hex_32), n_32);
 
-	NB_err_if(b2hx_u64(&n_64, 1, hex) != 17, "");
-	NB_err_if(strcmp(hex, hex_64), "'%s' not expected '%s'", hex, hex_64);
-	NB_err_if(hx2b_u64(hex_64) != n_64,
+	NB_err_if(b2hx_u64(&n_64, 1, hex)
+		!= 17, "");
+	NB_err_if(strcmp(hex, hex_64)
+		, "'%s' not expected '%s'", hex, hex_64);
+	NB_err_if(hx2b_u64(hex_64)
+		!= n_64,
 		"%"PRIu64" != %"PRIu64, hx2b_u64(hex_64), n_64);
 
-	const unsigned char byte_field[] = { 0xa0, 0xb1, 0xc2, 0xd3, 0xe4, 0xf5, 0x06, 0x17,
-			0x28, 0x39, 0x4a, 0x5b, 0x6c, 0x7d, 0x8e, 0x9f };
+	const unsigned char byte_field[] = {
+		0xa0, 0xb1, 0xc2, 0xd3, 0xe4, 0xf5, 0x06, 0x17,
+		0x28, 0x39, 0x4a, 0x5b, 0x6c, 0x7d, 0x8e, 0x9f
+	};
+	NB_dump(byte_field, 16, "byte_field");
 	unsigned char bytes_parse[16];
-	NB_err_if(b2hx(byte_field, hex, 16) != 33, "");
-	NB_err_if(hx2b(hex, bytes_parse, sizeof(bytes_parse)) != 32, "");
-	NB_err_if(memcmp(byte_field, bytes_parse, 16), "");
+
+	NB_err_if(b2hx(byte_field, hex, 16)
+		!= 33, "");
+	NB_err_if(hx2b(hex, bytes_parse, sizeof(bytes_parse))
+		!= 32, "");
+	NB_err_if(memcmp(byte_field, bytes_parse, 16)
+		, "");
+	NB_wrn("hex (le):\n%s", hex);
+	NB_dump(bytes_parse, 16, "bytes_parse (le)");
+
+	/* repeat for big-endian */
+	NB_err_if(b2hx_BE(byte_field, hex, 16)
+		!= 33, "");
+	NB_err_if(hx2b_BE(hex, bytes_parse, sizeof(bytes_parse))
+		!= 32, "");
+	NB_err_if(memcmp(byte_field, bytes_parse, 16)
+		, "");
+	NB_wrn("hex (BE):\n%s", hex);
+	NB_dump(bytes_parse, 16, "bytes_parse (BE)");
 
 	return err_cnt;
 }
