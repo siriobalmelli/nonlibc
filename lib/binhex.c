@@ -162,6 +162,13 @@ const char *hex_burn_leading(const char *hex)
 	/* How many nibbles are there ACTUALLY?					\
 	 * We may be parsing a 64-bit int expressed in 1 character (LSnibble).	\
 	 * Therefore, we must parse backwards.					\
+	 * One may be forgiven for thinking "surely we can turn this into a	\
+	 * single-pass operation", but one would be wrong, since a single pass	\
+	 * means shifting _all_ earlier values (up/down depending on endianness)\
+	 * each time one parses the next byte.					\
+	 * The basic problem appears to be that human representation is		\
+	 * _actually_ variable-sized little-endian, disguised as big-endian	\
+	 * by implicit right-alignment of numbers.				\
 	 */									\
 	int nibble_cnt = 0;							\
 	while (nibble_cnt < bytes * 2) {					\
