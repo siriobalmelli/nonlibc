@@ -143,19 +143,28 @@ static void __attribute__ ((constructor)) ND_start()
  */
 #ifndef NDEBUG
 #define NB_dump(BUF, BUF_LEN, INFO, ...)					\
-	NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__);				\
-	for (size_t nb_i = 0; nb_i < BUF_LEN; nb_i++) {				\
-		/* new line every 16 bytes (aka: nb_i % 16) */			\
-		if (!(nb_i & 0xf)) {						\
-			NB_PRN(fdout, "\n");					\
-			NB_PRN(fdout, "%08zx:", nb_i);				\
+	do {									\
+		NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__);			\
+		size_t nb_i = 0;						\
+		for (; nb_i < BUF_LEN; nb_i++) {				\
+			/* starting address at the head of each line */		\
+			if (!(nb_i & 0xf))					\
+				NB_PRN(fdout, "%08zx:", nb_i);			\
+			/* space between groups of 2 bytes */			\
+			if (!(nb_i & 0x1))					\
+				NB_PRN(fdout, " ");				\
+			/* pad bytes to 2 hex digits always */			\
+			NB_PRN(fdout, "%02hhx", ((const char*)BUF)[nb_i]);	\
+			/* new line after 16 bytes */				\
+			if ((nb_i & 0xf) == 0xf)				\
+				NB_PRN(fdout, "\n");				\
 		}								\
-		/* space between groups of 2 bytes */				\
-		if (!(nb_i & 0x1))						\
-			NB_PRN(fdout, " ");					\
-		NB_PRN(fdout, "%02hhx", ((const char*)BUF)[nb_i]);		\
-	}									\
-	NB_PRN(fdout, "\n");
+		/* corner case: avoid dual-newline when dumping an even multiple\
+		 * of 16.							\
+		 */								\
+		if ((nb_i & 0xf) != 0xf)					\
+			NB_PRN(fdout, "\n");					\
+	} while(0);
 
 #else
 #define NB_dump(BUF, BUF_LEN, INFO, ...) ;
