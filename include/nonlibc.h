@@ -68,55 +68,54 @@
  * - dealing with a bunch of kludge
  */
 #ifdef __APPLE__
-	/* OS X <10.12 doesn't have clock_gettime() ...
-		and I can't find how to check for version :P
-	Fall back on less accurate methods.
-	*/
-	#include <sys/time.h>
+/* OS X <10.12 doesn't have clock_gettime() ...
+	and I can't find how to check for version :P
+Fall back on less accurate methods.
+*/
+#include <sys/time.h>
+#define nlc_timing_2u64(tp) \
+	((uint64_t)tp.tv_usec + ((uint64_t)tp.tv_sec * 1000000))
 
-	#define nlc_timing_2u64(tp) \
-		((uint64_t)tp.tv_usec + ((uint64_t)tp.tv_sec * 1000000))
+#define nlc_timing_start(timer_name)						\
+	struct timeval tp_##timer_name = { 0 };					\
+	gettimeofday(&tp_##timer_name, NULL);					\
+	clock_t cpu_##timer_name = clock();					\
+	__atomic_thread_fence(__ATOMIC_SEQ_CST);
 
-	#define nlc_timing_start(timer_name) \
-		struct timeval tp_##timer_name = { 0 }; \
-		gettimeofday(&tp_##timer_name, NULL); \
-		clock_t cpu_##timer_name = clock(); \
-		__atomic_thread_fence(__ATOMIC_SEQ_CST);
+#define nlc_timing_stop(timer_name)						\
+	__atomic_thread_fence(__ATOMIC_SEQ_CST);				\
+	cpu_##timer_name = clock() - cpu_##timer_name;				\
+	uint64_t wall_##timer_name = nlc_timing_2u64(tp_##timer_name);		\
+	gettimeofday(&tp_##timer_name, NULL);					\
+	wall_##timer_name = nlc_timing_2u64(tp_##timer_name) - wall_##timer_name;
 
-	#define nlc_timing_stop(timer_name) \
-		__atomic_thread_fence(__ATOMIC_SEQ_CST); \
-		cpu_##timer_name = clock() - cpu_##timer_name; \
-		uint64_t wall_##timer_name = nlc_timing_2u64(tp_##timer_name); \
-		gettimeofday(&tp_##timer_name, NULL); \
-		wall_##timer_name = nlc_timing_2u64(tp_##timer_name) - wall_##timer_name;
-
-	/* wall clock time */
-	#define nlc_timing_wall(timer_name) \
-		((double)wall_##timer_name / 1000000)
+/* wall clock time */
+#define nlc_timing_wall(timer_name) \
+	((double)wall_##timer_name / 1000000)
 
 #else
-	#include <time.h>
+#include <time.h>
+#define nlc_timing_2u64(tp) \
+	((uint64_t)(tp).tv_nsec + ((uint64_t)(tp).tv_sec * 1000000000))
 
-	#define nlc_timing_2u64(tp) \
-		((uint64_t)(tp).tv_nsec + ((uint64_t)(tp).tv_sec * 1000000000))
+#define nlc_timing_start(timer_name)						\
+	struct timespec tp_##timer_name = { 0 };				\
+	clock_gettime(CLOCK_MONOTONIC, &tp_##timer_name);			\
+	clock_t cpu_##timer_name = clock();					\
+	__atomic_thread_fence(__ATOMIC_SEQ_CST);
 
-	#define nlc_timing_start(timer_name) \
-		struct timespec tp_##timer_name = { 0 }; \
-		clock_gettime(CLOCK_MONOTONIC, &tp_##timer_name); \
-		clock_t cpu_##timer_name = clock(); \
-		__atomic_thread_fence(__ATOMIC_SEQ_CST);
+#define nlc_timing_stop(timer_name)						\
+	__atomic_thread_fence(__ATOMIC_SEQ_CST);				\
+	cpu_##timer_name = clock() - cpu_##timer_name;				\
+	uint64_t wall_##timer_name = nlc_timing_2u64(tp_##timer_name);		\
+	clock_gettime(CLOCK_MONOTONIC, &tp_##timer_name);			\
+	wall_##timer_name = nlc_timing_2u64(tp_##timer_name) - wall_##timer_name;
 
-	#define nlc_timing_stop(timer_name) \
-		__atomic_thread_fence(__ATOMIC_SEQ_CST); \
-		cpu_##timer_name = clock() - cpu_##timer_name; \
-		uint64_t wall_##timer_name = nlc_timing_2u64(tp_##timer_name); \
-		clock_gettime(CLOCK_MONOTONIC, &tp_##timer_name); \
-		wall_##timer_name = nlc_timing_2u64(tp_##timer_name) - wall_##timer_name;
-
-	/* wall clock time */
-	#define nlc_timing_wall(timer_name) \
-		((double)wall_##timer_name / 1000000000)
+/* wall clock time */
+#define nlc_timing_wall(timer_name) \
+	((double)wall_##timer_name / 1000000000)
 #endif
+
 
 /* CPU time in fractional seconds */
 #define nlc_timing_cpu(timer_name) \
@@ -133,16 +132,19 @@
  * swap	:	value e.g. '0' or 'NULL'
  * exec	:	function pointer e.g. 'free'
  */
-#define NLC_SWAP_EXEC(var, swap, exec) { \
-	typeof(var) bits_temp_; \
-	bits_temp_ = (typeof(var))__atomic_exchange_n(&(var), (typeof(var))(swap), __ATOMIC_ACQUIRE); \
-	if (bits_temp_ != ((typeof(var))(swap))) { \
-		exec(bits_temp_); \
-		bits_temp_ = (typeof(var))(swap); \
-	} \
+#define NLC_SWAP_EXEC(var, swap, exec) {					\
+	typeof(var) bits_temp_;							\
+	bits_temp_ = (typeof(var))__atomic_exchange_n(&(var),			\
+						(typeof(var))(swap),		\
+						__ATOMIC_ACQUIRE);		\
+	if (bits_temp_ != ((typeof(var))(swap))) {				\
+		exec(bits_temp_);						\
+		bits_temp_ = (typeof(var))(swap);				\
+	}									\
 }
 
 
+#ifndef be64toh
 /* Explicitly provide endianness macros, since 'endian.h' isn't everywhere
  * (I'm looking at you, Darwin BSD!).
  * Bonus: the implementation is GCC builtins :)
@@ -178,6 +180,7 @@
 
 #else
 #error "Architecture endinanness not supported. Send espresso to maintainer"
+#endif
 #endif
 
 

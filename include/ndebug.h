@@ -103,12 +103,14 @@ static void __attribute__ ((constructor)) ND_start()
  * - print instrumentation
  * - 'errno' is printed if set, AND THEN RESET.
  */
-#define NB_LOG(FD, PREFIX, MESSAGE, ...) \
-	NB_PRN(FD, "[%s] %10s:%03d +%-15s\t:: " MESSAGE "\n", \
-		PREFIX, basename(__FILE__), __LINE__, __FUNCTION__, ##__VA_ARGS__); \
-	if (errno) { \
-		NB_PRN(FD, "\t!errno: 0x%02x|%s!\n", errno, strerror(errno)); \
-		errno = 0; \
+#define NB_LOG(FD, PREFIX, MESSAGE, ...)					\
+	NB_PRN(FD, "[%s] %10s:%03d +%-15s\t:: " MESSAGE "\n",			\
+		PREFIX, basename(__FILE__),					\
+		__LINE__, __FUNCTION__,						\
+		##__VA_ARGS__);							\
+	if (errno) {								\
+		NB_PRN(FD, "\t!errno: 0x%02x|%s!\n", errno, strerror(errno));	\
+		errno = 0;							\
 	}
 
 #else
@@ -117,9 +119,9 @@ static void __attribute__ ((constructor)) ND_start()
  * - elide file, line, function and errno info
  * - avoid logging at all if message is null
  */
-#define NB_LOG(FD, PREFIX, MESSAGE, ...) \
-	if (MESSAGE[0] != '\0') { \
-		NB_PRN(FD, MESSAGE "\n", ##__VA_ARGS__); \
+#define NB_LOG(FD, PREFIX, MESSAGE, ...)					\
+	if (MESSAGE[0] != '\0') {						\
+		NB_PRN(FD, MESSAGE "\n", ##__VA_ARGS__);			\
 	}
 #endif
 
@@ -131,28 +133,32 @@ static void __attribute__ ((constructor)) ND_start()
 #define NB_inf(INFO, ...) \
 	NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__)
 #else
-#define NB_inf(INFO, ...) \
-	;
+#define NB_inf(INFO, ...) ;
 #endif
 
 /*	NB_dump()
  * Dump BUF_LEN bytes from BUF, prefixed by INFO message;
  * becomes a NOP if NDEBUG is defined.
+ * Dump is (losely speaking) in xxd format.
  */
 #ifndef NDEBUG
-#define NB_dump(BUF, BUF_LEN, INFO, ...) \
-	NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__); \
-	for (size_t nb_i = 0; nb_i < BUF_LEN; nb_i++) { \
-		/* new line every 8 bytes (aka: nb_i % 8) */ \
-		if (!(nb_i & 0x7)) \
-			NB_PRN(fdout, "\n"); \
-		NB_PRN(fdout, "0x%hhx\t", ((const char*)BUF)[nb_i]); \
-	} \
-	NB_PRN(fdout, "\n"); \
+#define NB_dump(BUF, BUF_LEN, INFO, ...)					\
+	NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__);				\
+	for (size_t nb_i = 0; nb_i < BUF_LEN; nb_i++) {				\
+		/* new line every 16 bytes (aka: nb_i % 16) */			\
+		if (!(nb_i & 0xf)) {						\
+			NB_PRN(fdout, "\n");					\
+			NB_PRN(fdout, "%08zx:", nb_i);				\
+		}								\
+		/* space between groups of 2 bytes */				\
+		if (!(nb_i & 0x1))						\
+			NB_PRN(fdout, " ");					\
+		NB_PRN(fdout, "%02hhx", ((const char*)BUF)[nb_i]);		\
+	}									\
+	NB_PRN(fdout, "\n");
 
 #else
-#define NB_dump(BUF, BUF_LEN, INFO, ...) \
-	;
+#define NB_dump(BUF, BUF_LEN, INFO, ...) ;
 #endif
 
 
@@ -178,8 +184,7 @@ static void __attribute__ ((constructor)) ND_start()
 #define NB_wrn(WARNING, ...) \
 	NB_LOG(fderr, "WRN", WARNING, ##__VA_ARGS__)
 #else
-#define NB_wrn(WARNING, ...) \
-	;
+#define NB_wrn(WARNING, ...) ;
 #endif
 
 /*	NB_wrn_if()
@@ -188,13 +193,12 @@ static void __attribute__ ((constructor)) ND_start()
  * Test is NOT performed in release (NDEBUG) builds.
  */
 #ifndef NDEBUG
-#define NB_wrn_if(CONDITION, WARNING, ...) \
-	if (__builtin_expect(CONDITION, 0)) { \
-		NB_wrn(WARNING, ##__VA_ARGS__); \
+#define NB_wrn_if(CONDITION, WARNING, ...)					\
+	if (__builtin_expect(CONDITION, 0)) {					\
+		NB_wrn(WARNING, ##__VA_ARGS__);					\
 	}
 #else
-#define NB_wrn_if(CONDITION, WARNING, ...) \
-	;
+#define NB_wrn_if(CONDITION, WARNING, ...) ;
 #endif
 
 
@@ -202,18 +206,18 @@ static void __attribute__ ((constructor)) ND_start()
  * Print ERROR as "ERR"; increment 'err_cnt'.
  * Is a full memory barrier.
  */
-#define NB_err(ERROR, ...) \
-	do { \
-		NB_LOG(fderr, "ERR", ERROR, ##__VA_ARGS__); \
-		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
+#define NB_err(ERROR, ...)							\
+	do {									\
+		NB_LOG(fderr, "ERR", ERROR, ##__VA_ARGS__);			\
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST);		\
 	} while (0)
 
 /*	NB_err_if()
  * Test CONDITION and call NB_err() if true.
  */
-#define NB_err_if(CONDITION, ERROR, ...) \
-	if (__builtin_expect(CONDITION, 0)) { \
-		NB_err(ERROR, ##__VA_ARGS__); \
+#define NB_err_if(CONDITION, ERROR, ...)					\
+	if (__builtin_expect(CONDITION, 0)) {					\
+		NB_err(ERROR, ##__VA_ARGS__);					\
 	}
 
 
@@ -221,19 +225,19 @@ static void __attribute__ ((constructor)) ND_start()
  * Print DEATH as "DIE"; increment 'err_cnt'; jump (goto) 'die'.
  * Is a full memory barrier.
  */
-#define NB_die(DEATH, ...) \
-	do { \
-		NB_LOG(fderr, "DIE", DEATH, ##__VA_ARGS__); \
-		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
-		goto die; \
+#define NB_die(DEATH, ...)							\
+	do {									\
+		NB_LOG(fderr, "DIE", DEATH, ##__VA_ARGS__);			\
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST);		\
+		goto die;							\
 	} while (0)
 
 /*	NB_die_if()
  * Test CONDITION and call NB_die() if true.
  */
-#define NB_die_if(CONDITION, DEATH, ...) \
-	if (__builtin_expect(CONDITION, 0)) { \
-		NB_die(DEATH, ##__VA_ARGS__); \
+#define NB_die_if(CONDITION, DEATH, ...)					\
+	if (__builtin_expect(CONDITION, 0)) {					\
+		NB_die(DEATH, ##__VA_ARGS__);					\
 	}
 
 
