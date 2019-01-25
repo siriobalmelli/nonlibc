@@ -2,62 +2,74 @@
 #   - The Meson build setup must stand alone and *not* depend on Nix
 #   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('nonlibc', 'c',
-	version : '0.3.3',
-	license : 'LGPL-2.1+',
-	default_options : [ 'c_std=gnu11' ])
+  version : '0.3.3',
+  license : 'LGPL-2.1+',
+  default_options : [
+    'b_coverage=true',
+    'c_std=gnu11'
+    ])
 description = 'Collection of standard-not-standard utilities for the discerning C programmer'
 homepage = 'https://siriobalmelli.github.io/nonlibc/'
 
-#sanity
-assert(meson.project_name() == 'nonlibc', 'Incorrect project name')
-if (build_machine.cpu_family() == 'x86_64')
-	assert(meson.version() >= '0.44.0', 'unfortuately, rpath issues in previous versions')
-endif
 
+# whole-project build flags (most of these are hardening flags)
+add_project_arguments([
+    '-D_FORTIFY_SOURCE=2',
+    '-fasynchronous-unwind-tables',
+    '-fexceptions',
+    '-fstack-protector-strong',
+    '-pipe',
+    '-Wall',
+    '-Werror=format-security',
+    '-Werror=implicit-function-declaration'
+    ],
+  language : 'c')
 
-# whole-project build flags
-add_project_arguments([ '-D_FORTIFY_SOURCE=2' ], language : 'c')
-
-#
-#	build options by type
-#
-# debug : all the pedantic things!
-# debugoptimized : daily worker build; basically 'release' but with symbols
+# _all_ variables visible in gdb and core dumps
 if get_option('buildtype') == 'debug'
-  add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer',
-			'-DZ_LOG_LVL=(Z_inf | Z_in2 | Z_wrn | Z_wr2 | Z_err )' ],
-			language : 'c')
+  add_project_arguments([
+    '-DDEBUG',
+    '-fno-omit-frame-pointer',
+    '-grecord-gcc-switches',
+    '-O0',
+    '-Wno-cpp'
+    ],
+    language : 'c')
 
 elif get_option('buildtype') == 'debugoptimized'
-  add_project_arguments([ '-march=native', '-mtune=native', '-fno-omit-frame-pointer' ],
-			language : 'c')
+  add_project_arguments([
+    '-fno-omit-frame-pointer',
+    '-grecord-gcc-switches',
+    '-march=native',
+    '-mtune=native',
+    '-O2'
+    ],
+  language : 'c')
 
-# release : optimize this! ship this!
 elif get_option('buildtype') == 'release'
-  add_project_arguments([ '-DNDEBUG', '-march=native', '-mtune=native', '-Ofast' ],
-			language : 'c')
+  add_project_arguments([
+    '-DNDEBUG',
+    '-march=native',
+    '-mtune=native',
+    '-Ofast'
+    ],
+  language : 'c')
 
-# plain : NO flags;
-#+	use this to cross check the effect of flags on the other build types.
+# use this to cross check the effect of flags on the other build types.
 elif get_option('buildtype') == 'plain'
-  add_project_arguments([ '-DNDEBUG' ],
-			language : 'c')
+  add_project_arguments([
+    '-DNDEBUG',
+    '-march=core2'
+    ],
+  language : 'c')
 endif
 
 
-# deps
-# deps are either statically or dynamically incorporated;
-#+	see meson_options.txt for the default value, which can be overridden
-#+	with a -Ddep_type=["shared"||"static"] flag when running meson.
-dep_static = false
-_dep = get_option('dep_type')
-if _dep == 'static'
-	dep_static = true
-endif
 # insert deps here:
-urcu = dependency('liburcu', static: dep_static, required: true)
+liburcu_dep = dependency('liburcu', fallback : ['liburcu', 'liburcu_dep'])
+# All deps in a single arg. Use THIS ONE in compile calls
+deps = [liburcu_dep]
 
-deps = [urcu]
 
 inc = include_directories('include')
 subdir('include')

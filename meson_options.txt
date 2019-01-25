@@ -1,6 +1,0 @@
-option(
-  'dep_type',
-  description : 'how dependencies should be incorporated',
-  type : 'string',
-  value : 'shared'
-)

@@ -1,20 +1,26 @@
-#	utils
+# utils
 # Any utilities directly provided by this library
 fnvsum = executable('fnvsum', 'fnvsum.c',
-		include_directories : inc,
-		dependencies : nonlibc_dep_shared,
-		install : true)
+    include_directories : inc,
+    dependencies : nonlibc_dep,
+    install : true
+    )
 
-test('fnvsum test',
-	find_program('test_fnvsum.py'),
-	args : fnvsum.full_path())
+test('fnvsum',
+    find_program('test_fnvsum.py'),
+    args    : fnvsum.full_path(),
+    suite   : 'utils'
+    )
 
 
 ncp = executable('ncp', 'ncp.c',
-		include_directories : inc,
-		dependencies: nonlibc_dep_shared,
-		install : true)
+    include_directories : inc,
+    dependencies        : nonlibc_dep,
+    install             : true
+    )
 
-test('ncp test',
-	find_program('test_ncp.py'),
-	args : ncp.full_path())
+test('ncp',
+    find_program('test_ncp.py'),
+    args    : ncp.full_path(),
+    suite   : 'utils'
+    )

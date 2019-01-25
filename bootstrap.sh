@@ -8,7 +8,7 @@ FAILS=
 rm -rfv ./build-*
 
 compilers="clang gcc"
-build_types="debugoptimized release plain"
+build_types="debug debugoptimized release plain"
 
 for cc in $compilers; do
 	if ! which $cc; then break; fi
@@ -28,14 +28,18 @@ for cc in $compilers; do
 	done
 done
 
+
 # Index codebase
 cscope -b -q -U -I ./include -s ./src -s ./util -s ./test
 
-# run valgrind
-# TODO: won't fly on a 3.13.0-32-generic (ubuntu 12.04 EOL)
-#pushd ./build-debugoptimized-gcc \
-#	&& meson test --wrap="valgrind --leak-check=full --show-leak-kinds=all"
-#popd
+# the use of a "core" suite:
+# - limits the valgrind run to the "shared" tests only (avoiding static builds)
+# - avoids application/util tests which are written e.g. in Python and would
+#   break valgrind hard
+pushd ./build-debugoptimized-gcc \
+	&& meson test --suite="core" \
+		--wrap="valgrind --leak-check=full --show-leak-kinds=all"
+popd
 
 ## build and test sanitizers
 # TODO: wait for clang 4.0.1 bugfix in nix repos, or go with 5.0.0?

@@ -2,7 +2,6 @@
   # options
   buildtype ? "release",
   compiler ? "clang",
-  dep_type ? "shared",
   mesonFlags ? "",
 
   # deps
@@ -24,7 +23,7 @@ stdenv.mkDerivation rec {
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
-  buildInputs = [
+  inputs = [
     clang
     gcc
     meson
@@ -35,9 +34,15 @@ stdenv.mkDerivation rec {
     dpkg
     fpm
     rpm
-    which
     zip
   ];
+  buildInputs = if ! lib.inNixShell then inputs else inputs ++ [
+    nixpkgs.cscope
+    nixpkgs.gdb
+    nixpkgs.valgrind
+    nixpkgs.which
+  ];
+
   propagatedBuildInputs = [
     liburcu
   ];
@@ -61,8 +66,7 @@ stdenv.mkDerivation rec {
 
   # build
   mFlags = mesonFlags
-    + " --buildtype=${buildtype}"
-    + " -Ddep_type=${dep_type}";
+    + " --buildtype=${buildtype}";
   configurePhase = ''
       CC=${compiler} meson --prefix=$out build $mFlags
       cd build
@@ -79,6 +83,8 @@ stdenv.mkDerivation rec {
       ninja install
   '';
 
+  # TODO: get rid of these: packages built while looking at /nix are
+  #+ useless on normal systems.
   # Build packages outside $out then move them in: fpm seems to ignore
   #+	the '-x' flag that we need to avoid packaging packages inside packages
   # NOTE also the `''` escape so that Nix will leave `${` alone (facepalms internally)
