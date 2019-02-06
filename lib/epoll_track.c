@@ -159,23 +159,31 @@ int eptk_remove(struct epoll_track *tk, int fd)
  */
 int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask)
 {
+	struct epoll_event *events = NULL;
+	int ret = 0;
+
 	/* epoll demands that "maxevents argument must be greater than zero" */
 	if (!tk->rcnt)
-		return 0;
+		return ret;
 	/* Allocating event structure on the stack here so that:
 	 * - tk is smaller (no 'void *reports').
 	 * - register/remove code doesn't worry about realloc() which is a massive
 	 *   barrier to multithreading ... everything else is urcu so we don't
 	 *   have to care.
 	 */
-	struct epoll_event *events = alloca(tk->rcnt * sizeof(struct epoll_event));
+	NB_die_if(!(
+		events = malloc(tk->rcnt * sizeof(struct epoll_event))
+		), "fail alloc size %zu", tk->rcnt * sizeof(struct epoll_event));
 
-	int ret = epoll_pwait(tk->epfd, events, tk->rcnt, timeout, sigmask);
+	ret = epoll_pwait(tk->epfd, events, tk->rcnt, timeout, sigmask);
 	/* -1 is less than 0 ;) */
 	for (int i=0; i < ret; i++) {
 		struct epoll_track_cb *cb = events[i].data.ptr;
 		if (cb->callback(cb->fd, events[i].events, cb->context))
 			eptk_remove(tk, cb->fd);
 	}
+
+die:
+	free(events);
 	return ret;
 }
