@@ -69,10 +69,11 @@ int main()
 	free(alloc);					alloc = NULL;
 
 	/* zero alloc */
-	NB_die_if((
+	NB_die_if(!(
 		alloc = nstralloc(source, 0, &len)
-		) != NULL, "");
+		), "");
 	NB_die_if(len, "");
+	free(alloc);					alloc = NULL;
 
 die:
 	free(alloc);

@@ -60,12 +60,9 @@ NLC_INLINE size_t nstrcpy(char *dest, const char *src, size_t max, bool zero_pad
  * Allocate a new string, copy at most 'max-1' size string into it from 'src'.
  * Return allocated string or NULL on error.
  * Write size of allocated string to '*out_len' (if given).
- *
- * Caller should ALWAYS check `errno`:
- * EINVAL	: insane parameters (therefore could not alloc or copy)
- * E2BIG	: string was truncated
- *
  * Caller is responsible for free()ing returned string.
+ *
+ * All other aspects are identical to preceding nstrcpy().
  */
 NLC_INLINE char *nstralloc(const char *src, size_t max, size_t *out_len)
 {
@@ -79,10 +76,8 @@ NLC_INLINE char *nstralloc(const char *src, size_t max, size_t *out_len)
 	}
 
 	len = strnlen(src, max);
-	if (!len)
-		goto out;
 
-	if (len == max) {
+	if (len && len == max) {
 		len--;
 		errno = E2BIG;
 	}
