@@ -156,26 +156,28 @@ int eptk_remove(struct epoll_track *tk, int fd)
  * If events are returned, execute respective callback on each.
  * Return original return value of epoll_wait(), with errno intact;
  * allow caller to correctly handle EINTR, etc.
+ *
+ * NOTE: will execute up to EPTK_PWAIT_STACK number of events;
+ * in practice this seldom matters since callers usually just loop on this
+ * function call.
  */
 int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask)
 {
-	struct epoll_event *events = NULL;
 	int ret = 0;
 
 	/* epoll demands that "maxevents argument must be greater than zero" */
 	if (!tk->rcnt)
 		return ret;
+
 	/* Allocating event structure on the stack here so that:
 	 * - tk is smaller (no 'void *reports').
 	 * - register/remove code doesn't worry about realloc() which is a massive
 	 *   barrier to multithreading ... everything else is urcu so we don't
 	 *   have to care.
 	 */
-	NB_die_if(!(
-		events = malloc(tk->rcnt * sizeof(struct epoll_event))
-		), "fail alloc size %zu", tk->rcnt * sizeof(struct epoll_event));
+	struct epoll_event events[EPTK_PWAIT_STACK];
+	ret = epoll_pwait(tk->epfd, events, EPTK_PWAIT_STACK, timeout, sigmask);
 
-	ret = epoll_pwait(tk->epfd, events, tk->rcnt, timeout, sigmask);
 	/* -1 is less than 0 ;) */
 	for (int i=0; i < ret; i++) {
 		struct epoll_track_cb *cb = events[i].data.ptr;
@@ -184,6 +186,5 @@ int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask
 	}
 
 die:
-	free(events);
 	return ret;
 }

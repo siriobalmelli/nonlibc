@@ -17,6 +17,12 @@
 #include <urcu/hlist.h>
 
 
+/* size of static stack in eptk_pwait_exec() */
+#ifndef EPTK_PWAIT_STACK
+#define EPTK_PWAIT_STACK 8
+#endif
+
+
 struct epoll_track; /* forward declaration only, see below */
 
 /*	eptk_context_t
