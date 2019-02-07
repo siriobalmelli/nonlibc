@@ -19,6 +19,7 @@ headers = [ 'nonlibc.h',
     'nmath.h',
     'nmem.h',
     'npath.h',
+    'nstring.h',
     'pcg_rand.h',
     'posigs.h',
 
