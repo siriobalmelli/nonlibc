@@ -8,6 +8,7 @@ tests = [
   'nlc_urand_test.c',
   'nmath_test.c',
   'npath_test.c',
+  'nstring_test.c',
   'pcg_rand_test.c',
   'zed_dbg_test.c'
   ]
