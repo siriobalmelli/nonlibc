@@ -185,6 +185,5 @@ int eptk_pwait_exec(struct epoll_track *tk, int timeout, const sigset_t *sigmask
 			eptk_remove(tk, cb->fd);
 	}
 
-die:
 	return ret;
 }

@@ -22,6 +22,7 @@ These are in order by priority:
 -	Test functions for `posigs`
 -	Handle generated headers in YCM clang completer?
 -	compilation: ThinLTO
+- look at [systemd](https://github.com/systemd/systemd) for code quality, Meson usage, packaging, etc
 
 ## TODO: lifo
 
