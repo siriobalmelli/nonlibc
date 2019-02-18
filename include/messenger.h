@@ -16,6 +16,7 @@
  *
  * (c) 2018 Sirio Balmelli and Anthony Soenen
  */
+
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -23,12 +24,11 @@
 #include <limits.h> /* PIPE_BUF */
 #include <stdlib.h>
 #include <stddef.h>
-/*
- *	message passing functions
- * NOTE: these are orthogonal to mg_subscribe/unsubscribe/alert (messenger)
- * semantics below/
- */
+#include <urcu/hlist.h>
 
+
+/*	struct message
+ */
 struct message {
 union{
 struct {
@@ -42,23 +42,35 @@ struct {
 /* pipe() only guarantees atomicity for PIPE_BUF bytes */
 #define MG_MAX (PIPE_BUF - (sizeof(uint_fast16_t)))
 
-ssize_t mg_send(int to_fd, void *data, size_t len);
-ssize_t mg_recv(int from_fd, void *data_out);
+
+ssize_t mg_send		(int to_fd, void *data, size_t len);
+ssize_t mg_recv		(int from_fd, void *data_out);
 
 
-/*
- *	message passing groups
+
+/*	struct mgrp
+ * A messenger group is the head of a linked list of memberships.
  */
-struct mg_group {
-	/* TODO: proper type for RCU */
-	void	*fd_rcu;
+struct mgrp {
+	struct cds_hlist_head	members;
 };
 
-void mgrp_free(struct mg_group *grp);
-struct mg_group *grprp_new();
+/*	struct mgrp_membership
+ * Group membership is the input (read-end of the pipe) fd, where
+ * notifiers can write messages.
+ */
+struct mgrp_membership {
+	struct cds_hlist_node	node;
+	int			in_fd;
+};
 
-int mgrp_subscribe(struct mg_group *grp, int my_fd);
-int mgrp_unsubscribe(struct mg_group *grp, int my_fd);
-int mgrp_broadcast(struct mg_group *grp, void *data, size_t len);
+
+void mgrp_free		(struct mgrp *grp);
+struct mgrp *mgrp_new	();
+
+int mgrp_subscribe	(struct mgrp *grp, int my_fd);
+int mgrp_unsubscribe	(struct mgrp *grp, int my_fd);
+int mgrp_broadcast	(struct mgrp *grp, int my_fd, void *data, size_t len);
+
 
 #endif /* messenger_h_ */

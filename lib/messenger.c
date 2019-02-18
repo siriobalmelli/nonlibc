@@ -1,13 +1,18 @@
+/*	messenger.c
+ * (c) 2018 Sirio Balmelli and Anthony Soenen
+ */
+
 #include <ndebug.h>
 #include <nonlibc.h>
 #include <messenger.h>
+
 
 /* our 'size' variable on this platform *must* be large enough
  * to express the largest atomic write size for a pipe (PIPE_BUF)
  */
 NLC_ASSERT(mg_size_sanity, INT_FAST16_MAX > PIPE_BUF);
 
-/* macrofy it so that we don't rewrite this for mgrp_broadcast()
+/* macrofy assembly on stack so that we don't rewrite this for mgrp_broadcast()
  * or (heaven forbid) do a new "assembly" for each target of the broadcast.
  */
 #define MG_ASSEMBLE  \
@@ -17,9 +22,9 @@ NLC_ASSERT(mg_size_sanity, INT_FAST16_MAX > PIPE_BUF);
 	memcpy(mg.data, data, len);
 
 
-/* mg_send()
+/*	mg_send()
  * Write 'len' bytes from 'data' into 'to_fd'.
- * Return behavior and semantics are same as for write()
+ * Return behavior and semantics are same as for libc write().
  */
 ssize_t mg_send(int to_fd, void *data, size_t len)
 {
@@ -31,9 +36,9 @@ ssize_t mg_send(int to_fd, void *data, size_t len)
 	return ret; /* because there is a different between 0 and -1 */
 }
 
-/* mg_recv()
+/*	mg_recv()
  * Get a message in 'from_fd' and write it to 'data_out'.
- * Return behavior and semantics are same as for read().
+ * Return behavior and semantics are same as for libc read().
  */
 ssize_t mg_recv(int from_fd, void *data_out)
 {
@@ -51,66 +56,98 @@ ssize_t mg_recv(int from_fd, void *data_out)
 }
 
 
-/* mgrp_free()
+/*	mgrp_free()
  */
-void mgrp_free(struct mg_group *grp)
+void mgrp_free(struct mgrp *grp)
 {
 	if (!grp)
 		return;
-	/* TODO: free RCU */
+
+	struct mgrp_membership *curr = NULL, *e = NULL;
+	cds_hlist_for_each_entry_safe_2(curr, e, &grp->members, node) {
+		cds_hlist_del(&curr->node);
+		free(curr);
+	}
+
 	free(grp);
 }
 
-/* mgrp_new()
+/*	mgrp_new()
  * Create a new messaging group, return pointer,
  * which must be freed with mgrp_free().
  */
-struct mg_group *mgrp_new()
+struct mgrp *mgrp_new()
 {
-	struct mg_group *grp = NULL;
+	struct mgrp *grp = NULL;
 	NB_die_if(!(
-		grp = malloc(sizeof *grp)
-		), "");
-	/* TODO: init rcu linked list */
+		grp = calloc(1, sizeof *grp)
+		), "fail alloc size %zu", sizeof(*grp));
 	return grp;
 die:
 	mgrp_free(grp);
 	return NULL;
 }
 
-/* mgrp_subscribe()
+
+/*	mgrp_subscribe()
  * Subscribe 'my_fd' to receive notifications by 'grp'.
  * Returns 0 on success.
  */
-int mgrp_subscribe(struct mg_group *grp, int my_fd)
-{
-	/* TODO: add 'my_fd' to RCU linked list */
-}
-
-/* mgrp_unsubscribe()
- * Remove 'my_fd' from 'grp'.
- * Returns 0 on success.
- */
-int mgrp_unsubscribe(struct mg_group *grp, int my_fd)
-{
-	/* TODO: remove from RCU linked list */
-}
-
-/* mgrp_broadcast()
- * Send 'len' bytes from 'data' to each member of 'grp'.
- * Same semantics as write().
- */
-int mgrp_broadcast(struct mg_group *grp, void *data, size_t len)
+int mgrp_subscribe(struct mgrp *grp, int my_fd)
 {
 	int err_cnt = 0;
-	int curr_fd = 0;
+	struct mgrp_membership *mem = NULL;
+	NB_die_if(!(
+		mem = calloc(1, sizeof(*mem))
+		), "fail alloc size %zu", sizeof(*mem));
+
+	cds_hlist_add_head(&mem->node, &grp->members);
+
+	return err_cnt;
+die:
+	free(mem);
+	return err_cnt;
+}
+
+/*	mgrp_unsubscribe()
+ * Remove 'my_fd' from 'grp'.
+ * Returns number of memberships deleted.
+ */
+int mgrp_unsubscribe(struct mgrp *grp, int my_fd)
+{
+	int removed = 0;
+	struct mgrp_membership *curr = NULL, *e = NULL;
+	/* TODO: change to an O(1) in a hash list */
+	cds_hlist_for_each_entry_safe_2(curr, e, &grp->members, node) {
+		if (curr->in_fd == my_fd) {
+			cds_hlist_del(&curr->node);
+			free(curr);
+			removed++;
+		}
+	}
+	return removed;
+}
+
+/*	mgrp_broadcast()
+ * Send 'len' bytes from 'data' to each member of 'grp' except for caller.
+ * Same semantics as write().
+ * Returns number of failed sends.
+ */
+int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
+{
+	int err_cnt = 0;
 	MG_ASSEMBLE
-	/* TODO: walk linked list
-	while (curr_fd = rcu_next(grp->fd_rcu))
-	*/
-		NB_err_if(write(curr_fd, &mg, PIPE_BUF) != PIPE_BUF,
-			"curr_fd %d", curr_fd);
-	if (err_cnt)
-		return -1;
-	return len;
+
+	struct mgrp_membership *curr = NULL;
+	cds_hlist_for_each_entry_2(curr, &grp->members, node) {
+		/* don't send to self */
+		if (curr->in_fd == my_fd)
+			continue;
+
+		ssize_t ret = write(curr->in_fd, &mg, PIPE_BUF);
+		if (ret < 1)
+			err_cnt++;
+	}
+
+	return err_cnt;
 }
