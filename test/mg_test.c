@@ -11,7 +11,7 @@
 #include <messenger.h>
 #include <pthread.h>
 
-#define THREAD_CNT 4
+#define THREAD_CNT 8
 #define ITERS 5000 /* how many messages each thread should send */
 
 static uint64_t tx_hash[THREAD_CNT] = { 0 };

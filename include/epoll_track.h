@@ -14,6 +14,10 @@
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <ndebug.h>
+
+#define _LGPL_SOURCE
+#define URCU_INLINE_SMALL_FUNCTIONS
+#include <urcu-bp.h>
 #include <urcu/hlist.h>
 
 

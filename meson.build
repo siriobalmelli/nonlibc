@@ -66,7 +66,8 @@ endif
 
 
 # insert deps here:
-liburcu_dep = dependency('liburcu', fallback : ['liburcu', 'liburcu_dep'])
+liburcu_dep = dependency('liburcu-bp')  # bulletproof RCU: we have no control over thread announcements
+
 # All deps in a single arg. Use THIS ONE in compile calls
 deps = [liburcu_dep]
 

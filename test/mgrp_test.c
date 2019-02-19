@@ -21,13 +21,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define THREAD_CNT 2
-#define ITERS 500 /* how many messages each thread should send */
+#define THREAD_CNT 8
+#define ITERS 5000 /* how many messages each thread should send */
 
-/* Hackish alternative to pthread_barrier_t
- * since that's not implemented on macOS.
- */
-sig_atomic_t barrier = 0;
 
 
 /*	thread()
@@ -46,13 +42,12 @@ void *thread(void* arg)
 	NB_die_if(
 		mgrp_subscribe(group, pvc[1])
 		, "");
-	/* don't start broadcasting until everyone is subscribed.
-	 * TODO: remove global variable and spin loading number of subscribers in group directly.
+	/* Don't start broadcasting until everyone is subscribed.
+	 * We could use pthread_barrier_t but that's not implemented on macOS,
+	 * and anyways messenger()'s mgrp_count is already atomic.
 	 */
-	if (__atomic_add_fetch(&barrier, 1, __ATOMIC_RELAXED) != THREAD_CNT) {
-		while (__atomic_load_n(&barrier, __ATOMIC_RELAXED) != THREAD_CNT && !psg_kill_check())
-			sched_yield();
-	}
+	while (mgrp_count(group) != THREAD_CNT && !psg_kill_check())
+		sched_yield();
 
 	/* generate ITERS broadcasts; receive others' broadcasts */
 	for (size_t i = 0; i < ITERS && !psg_kill_check(); i++) {

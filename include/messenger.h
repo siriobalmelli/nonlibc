@@ -18,9 +18,14 @@
  * (c) 2018 Sirio Balmelli and Anthony Soenen
  */
 
+#include <nonlibc.h>
 #include <stdint.h>
 #include <limits.h> /* PIPE_BUF */
 #include <stdlib.h>
+
+#define _LGPL_SOURCE
+#define URCU_INLINE_SMALL_FUNCTIONS
+#include <urcu-bp.h>
 #include <urcu/hlist.h>
 
 
@@ -65,9 +70,15 @@ struct mgrp_membership {
 void mgrp_free		(struct mgrp *grp);
 struct mgrp *mgrp_new	();
 
-int mgrp_subscribe	(struct mgrp *grp, int my_fd);
-int mgrp_unsubscribe	(struct mgrp *grp, int my_fd);
-int mgrp_broadcast	(struct mgrp *grp, int my_fd, void *data, size_t len);
+int	mgrp_subscribe	(struct mgrp *grp, int my_fd);
+int	mgrp_unsubscribe(struct mgrp *grp, int my_fd);
+int	mgrp_broadcast	(struct mgrp *grp, int my_fd, void *data, size_t len);
+
+NLC_INLINE
+size_t	mgrp_count	(struct mgrp *grp)
+{
+	return __atomic_load_n(&grp->count, __ATOMIC_ACQUIRE);
+}
 
 
 #endif /* messenger_h_ */

@@ -127,7 +127,7 @@ int eptk_remove(struct epoll_track *tk, int fd)
 	/* walk le list */
 	int removed = 0;
 	struct epoll_track_cb *curr = NULL, *e = NULL;
-	/* TODO: change to an O(1) in a hash list.
+	/* TODO: change to an O(1) in a hash list?
 	 * The idea that the same fd could be being tracked more than once
 	 * is a fallacy.
 	 */

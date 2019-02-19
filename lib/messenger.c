@@ -116,7 +116,7 @@ int mgrp_unsubscribe(struct mgrp *grp, int my_fd)
 {
 	int removed = 0;
 	struct mgrp_membership *curr = NULL, *e = NULL;
-	/* TODO: change to an O(1) in a hash list */
+	/* TODO: change to an O(1) in a hash list? */
 	cds_hlist_for_each_entry_safe_2(curr, e, &grp->members, node) {
 		if (curr->in_fd == my_fd) {
 			cds_hlist_del(&curr->node);
