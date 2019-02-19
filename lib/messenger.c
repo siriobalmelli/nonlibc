@@ -16,70 +16,22 @@
 NLC_ASSERT(mg_size_sanity, INT_FAST16_MAX > PIPE_BUF);
 
 
-#ifndef MG_SCATTER_GATHER
-/* macrofy assembly on stack so that we don't rewrite this for mgrp_broadcast()
- * or (heaven forbid) do a new "assembly" for each target of the broadcast.
- */
-#define MG_ASSEMBLE  \
-	if (len > MG_MAX) \
-		return -1; \
-	struct message mg; \
-	mg.len = len; \
-	memcpy(mg.data, data, len);
-
-/*	mg_send()
- * Write 'len' bytes from 'data' into 'to_fd'.
- * Return behavior and semantics are same as for libc write().
- */
-ssize_t mg_send(int to_fd, void *data, size_t len)
-{
-	MG_ASSEMBLE
-	ssize_t ret = write(to_fd, &mg, PIPE_BUF);
-	/* hide our header size from the caller */
-	if (ret > 0)
-		return len;
-	return ret; /* because there is a different between 0 and -1 */
-}
-
-/*	mg_recv()
- * Get a message in 'from_fd' and write it to 'data_out'.
- * Return behavior and semantics are same as for libc read().
- */
-ssize_t mg_recv(int from_fd, void *data_out)
-{
-	/* NOTE: we assume that since we are writing *atomically*
-	 * we will *always* read either PIPE_BUF or 0 or -1
-	 */
-	struct message mg;
-	ssize_t rd = read(from_fd, &mg, PIPE_BUF);
-	if (rd != PIPE_BUF)
-		return rd;
-
-	ssize_t ret = (ssize_t)mg.len;
-	memcpy(data_out, mg.data, ret);
-	return ret;
-}
-
-#else
-static uint8_t filler[MG_MAX] = { 0 };
-
 ssize_t mg_send(int to_fd, void *data, size_t len)
 {
 	if (len > MG_MAX) \
 		return -1;
 	uint_fast16_t sz = len;
-	struct iovec gather[3] = {
+
+	struct iovec gather[2] = {
 		{ .iov_base = &sz, .iov_len = sizeof(sz) },
-		{ .iov_base = data, .iov_len = sz },
-		{ .iov_base = filler, .iov_len = MG_MAX - sz }
+		{ .iov_base = data, .iov_len = sz }
 	};
-	ssize_t ret = writev(to_fd, gather, 3);
+	ssize_t ret = writev(to_fd, gather, 2);
+
 	/* hide our header size from the caller */
-	if (ret == PIPE_BUF)
+	if (ret > 1)
 		return len;
-	else
-		NB_wrn("tx not PIPE_BUF: %zd/%d", ret, PIPE_BUF);
-	return ret; /* because there is a different between 0 and -1 */
+	return ret; /* because there is a difference between 0 and -1 */
 }
 
 /*	mg_recv()
@@ -89,18 +41,16 @@ ssize_t mg_send(int to_fd, void *data, size_t len)
 ssize_t mg_recv(int from_fd, void *data_out)
 {
 	uint_fast16_t sz = 0;
-	struct iovec scatter[2] = {
-		{ .iov_base = &sz, .iov_len = sizeof(sz) },
-		{ .iov_base = data_out, .iov_len = MG_MAX }
-	};
+	ssize_t ret;
+	ret = read(from_fd, &sz, sizeof(sz));
+	if (ret > 0) {
+		ret = read(from_fd, data_out, sz);
+		if (ret > 0)
+			return sz;
+	}
 
-	ssize_t rd = readv(from_fd, scatter, 2);
-
-	if (rd > 0)
-		return sz;
-	return rd;
+	return ret;
 }
-#endif
 
 
 /*	mgrp_free()
@@ -178,32 +128,11 @@ int mgrp_unsubscribe(struct mgrp *grp, int my_fd)
 	return removed;
 }
 
-#ifndef MG_SCATTER_GATHER
 /*	mgrp_broadcast()
  * Send 'len' bytes from 'data' to each member of 'grp' except for caller.
  * Same semantics as write().
  * Returns number of failed sends.
  */
-int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
-{
-	int err_cnt = 0;
-	MG_ASSEMBLE
-
-	struct mgrp_membership *curr = NULL;
-	cds_hlist_for_each_entry_2(curr, &grp->members, node) {
-		/* don't send to self */
-		if (curr->in_fd == my_fd)
-			continue;
-
-		ssize_t ret = write(curr->in_fd, &mg, PIPE_BUF);
-		if (ret < 1)
-			err_cnt++;
-	}
-
-	return err_cnt;
-}
-
-#else
 int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
 {
 	int err_cnt = 0;
@@ -220,4 +149,3 @@ int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
 
 	return err_cnt;
 }
-#endif

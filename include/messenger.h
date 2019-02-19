@@ -3,27 +3,24 @@
 
 /* messenger - the atomic pipe-based messaging library
  *
- * Leverage the fact that PIPE_BUF is guaranteed atomic to pass simple messages
- * between threads which are listening (e.g. with epoll) to a pipe.
+ * Leverage the fact that writes up to PIPE_BUF size are guaranteed atomic
+ * to pass simple messages between threads which are listening
+ * (e.g. with epoll) to a pipe.
  *
  * Useful when avoiding global state by passing messages between threads/coroutines,
  * or when the program has run-to-sleep semantics (wakelocks on Android).
  *
- * Provides a simple "group" registration and message broadcast mechanism
- * using RCU to track membership.
+ * Provides a simple "group" registration and message broadcast mechanism.
  *
- * Eminently thread-safe.
+ * Thread-safe for multiple writers and a single reader.
+ * Not safe for multiple readers on the same fd.
  *
  * (c) 2018 Sirio Balmelli and Anthony Soenen
  */
 
 #include <stdint.h>
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
 #include <limits.h> /* PIPE_BUF */
 #include <stdlib.h>
-#include <stddef.h>
 #include <urcu/hlist.h>
 
 
@@ -42,12 +39,9 @@ struct {
 /* pipe() only guarantees atomicity for PIPE_BUF bytes */
 #define MG_MAX (PIPE_BUF - (sizeof(uint_fast16_t)))
 
-#define MG_SCATTER_GATHER
-
 
 ssize_t mg_send		(int to_fd, void *data, size_t len);
 ssize_t mg_recv		(int from_fd, void *data_out);
-
 
 
 /*	struct mgrp

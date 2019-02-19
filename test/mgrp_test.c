@@ -18,6 +18,7 @@
 #include <messenger.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <fcntl.h>
 
 #define THREAD_CNT 2
@@ -34,13 +35,9 @@ sig_atomic_t barrier = 0;
 void *thread(void* arg)
 {
 	struct mgrp *group = arg;
-	bool taken_barrier = false;
 	int pvc[2] = { 0, 0 };
 	size_t rx_sum = 0, rx_i = 0;
-	union {
-		size_t message;
-		uint8_t buf[MG_MAX];
-	} rx;
+	size_t message;
 
 	NB_die_if(
 		pipe(pvc)
@@ -64,17 +61,17 @@ void *thread(void* arg)
 			, "");
 		//NB_wrn("write");
 
-		while ((mg_recv(pvc[0], rx.buf) > 0) && !psg_kill_check()) {
+		while ((mg_recv(pvc[0], &message) > 0) && !psg_kill_check()) {
 			//NB_wrn("read");
-			rx_sum += rx.message;
+			rx_sum += message;
 			rx_i++;
 		}
 	}
 
 	/* wait on other senders */
 	while (rx_i < ITERS * (THREAD_CNT -1) && !psg_kill_check()) {
-		if ((mg_recv(pvc[0], rx.buf) > 0)) {
-			rx_sum += rx.message;
+		if ((mg_recv(pvc[0], &message) > 0)) {
+			rx_sum += message;
 			rx_i++;
 		}
 	}

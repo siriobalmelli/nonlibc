@@ -1,3 +1,8 @@
+/*	mg_test.c
+ * (c) 2018 Sirio Balmelli
+ */
+
+#include <unistd.h>
 #include <ndebug.h>
 #include <posigs.h> /* use atomic PSG kill flag as inter-thread err_cnt */
 #include <fnv.h>
