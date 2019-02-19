@@ -42,6 +42,8 @@ struct {
 /* pipe() only guarantees atomicity for PIPE_BUF bytes */
 #define MG_MAX (PIPE_BUF - (sizeof(uint_fast16_t)))
 
+#define MG_SCATTER_GATHER
+
 
 ssize_t mg_send		(int to_fd, void *data, size_t len);
 ssize_t mg_recv		(int from_fd, void *data_out);
@@ -53,6 +55,7 @@ ssize_t mg_recv		(int from_fd, void *data_out);
  */
 struct mgrp {
 	struct cds_hlist_head	members;
+	size_t			count;
 };
 
 /*	struct mgrp_membership

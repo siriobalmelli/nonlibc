@@ -64,7 +64,7 @@ void *tx_thread(void* arg)
 		/* Send the data */
 		size_t send_len = sizeof(struct blob) + header->len;
 		ssize_t ret = mg_send(contended[1], header, send_len);
-		NB_die_if(ret != send_len, "");
+		NB_die_if(ret != send_len, "mg_send %zd != len %zu", ret, send_len);
 	}
 die:
 	free(header);
@@ -98,8 +98,7 @@ void *rx_thread(void* arg)
 	int x = 0;
 	for (; x < ITERS * THREAD_CNT && !psg_kill_check(); x++) {
 		/* may return no bytes or an error (-1) */
-		ssize_t ret;
-		while ((ret = mg_recv(contended[0], header) < 1))
+		while ((mg_recv(contended[0], header) < 1))
 			sched_yield();
 		uint64_t *hash = &rx_hash[header->thread_id];
 		*hash = fnv_hash64(hash, header->bytes, header->len);
@@ -113,6 +112,8 @@ die:
 }
 
 
+/*	main()
+ */
 int main()
 {
 	int err_cnt = 0;

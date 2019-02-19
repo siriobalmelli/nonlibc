@@ -2,12 +2,14 @@
 #define fnv_h_
 
 /*	fnv.h		FNV1a hash algorithm
-
-The algorithm is not invented here (gasp!) and is public domain.
-See <https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function>
-
-(c) 2016 Sirio Balmelli and Anthony Soenen; https://b-ad.ch
-*/
+ *
+ * The algorithm is not invented here (gasp!) and is public domain.
+ * See <https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function>
+ *
+ * TODO: check efficiency against <http://burtleburtle.net/bob/c/lookup3.c>
+ *
+ *(c) 2016 Sirio Balmelli and Anthony Soenen; https://b-ad.ch
+ */
 
 #include <nonlibc.h>
 #include <stddef.h> /* size_t */

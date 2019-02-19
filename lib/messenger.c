@@ -2,6 +2,9 @@
  * (c) 2018 Sirio Balmelli and Anthony Soenen
  */
 
+#include <unistd.h>
+#include <sys/uio.h>
+
 #include <ndebug.h>
 #include <nonlibc.h>
 #include <messenger.h>
@@ -12,15 +15,17 @@
  */
 NLC_ASSERT(mg_size_sanity, INT_FAST16_MAX > PIPE_BUF);
 
+
+#ifndef MG_SCATTER_GATHER
 /* macrofy assembly on stack so that we don't rewrite this for mgrp_broadcast()
  * or (heaven forbid) do a new "assembly" for each target of the broadcast.
  */
 #define MG_ASSEMBLE  \
 	if (len > MG_MAX) \
 		return -1; \
-	struct message mg = { .len = len }; \
+	struct message mg; \
+	mg.len = len; \
 	memcpy(mg.data, data, len);
-
 
 /*	mg_send()
  * Write 'len' bytes from 'data' into 'to_fd'.
@@ -54,6 +59,48 @@ ssize_t mg_recv(int from_fd, void *data_out)
 	memcpy(data_out, mg.data, ret);
 	return ret;
 }
+
+#else
+static uint8_t filler[MG_MAX] = { 0 };
+
+ssize_t mg_send(int to_fd, void *data, size_t len)
+{
+	if (len > MG_MAX) \
+		return -1;
+	uint_fast16_t sz = len;
+	struct iovec gather[3] = {
+		{ .iov_base = &sz, .iov_len = sizeof(sz) },
+		{ .iov_base = data, .iov_len = sz },
+		{ .iov_base = filler, .iov_len = MG_MAX - sz }
+	};
+	ssize_t ret = writev(to_fd, gather, 3);
+	/* hide our header size from the caller */
+	if (ret == PIPE_BUF)
+		return len;
+	else
+		NB_wrn("tx not PIPE_BUF: %zd/%d", ret, PIPE_BUF);
+	return ret; /* because there is a different between 0 and -1 */
+}
+
+/*	mg_recv()
+ * Get a message in 'from_fd' and write it to 'data_out'.
+ * Return behavior and semantics are same as for libc read().
+ */
+ssize_t mg_recv(int from_fd, void *data_out)
+{
+	uint_fast16_t sz = 0;
+	struct iovec scatter[2] = {
+		{ .iov_base = &sz, .iov_len = sizeof(sz) },
+		{ .iov_base = data_out, .iov_len = MG_MAX }
+	};
+
+	ssize_t rd = readv(from_fd, scatter, 2);
+
+	if (rd > 0)
+		return sz;
+	return rd;
+}
+#endif
 
 
 /*	mgrp_free()
@@ -100,8 +147,10 @@ int mgrp_subscribe(struct mgrp *grp, int my_fd)
 	NB_die_if(!(
 		mem = calloc(1, sizeof(*mem))
 		), "fail alloc size %zu", sizeof(*mem));
+	mem->in_fd = my_fd;
 
 	cds_hlist_add_head(&mem->node, &grp->members);
+	grp->count++;
 
 	return err_cnt;
 die:
@@ -123,11 +172,13 @@ int mgrp_unsubscribe(struct mgrp *grp, int my_fd)
 			cds_hlist_del(&curr->node);
 			free(curr);
 			removed++;
+			grp->count--;
 		}
 	}
 	return removed;
 }
 
+#ifndef MG_SCATTER_GATHER
 /*	mgrp_broadcast()
  * Send 'len' bytes from 'data' to each member of 'grp' except for caller.
  * Same semantics as write().
@@ -151,3 +202,22 @@ int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
 
 	return err_cnt;
 }
+
+#else
+int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
+{
+	int err_cnt = 0;
+
+	struct mgrp_membership *curr = NULL;
+	cds_hlist_for_each_entry_2(curr, &grp->members, node) {
+		/* don't send to self */
+		if (curr->in_fd == my_fd)
+			continue;
+
+		if (mg_send(curr->in_fd, data, len) != len)
+			err_cnt++;
+	}
+
+	return err_cnt;
+}
+#endif
