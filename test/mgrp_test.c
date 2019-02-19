@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define THREAD_CNT 8
+#define THREAD_CNT 6
 #define ITERS 5000 /* how many messages each thread should send */
 
 
