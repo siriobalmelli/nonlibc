@@ -23,7 +23,11 @@
 #define THREAD_CNT 2
 #define ITERS 500 /* how many messages each thread should send */
 
-static pthread_barrier_t start_barrier;
+/* Hackish alternative to pthread_barrier_t
+ * since that's not implemented on macOS.
+ */
+sig_atomic_t barrier = 0;
+
 
 /*	thread()
  */
@@ -45,8 +49,13 @@ void *thread(void* arg)
 	NB_die_if(
 		mgrp_subscribe(group, pvc[1])
 		, "");
-	pthread_barrier_wait(&start_barrier);
-	taken_barrier = true;
+	/* don't start broadcasting until everyone is subscribed.
+	 * TODO: remove global variable and spin loading number of subscribers in group directly.
+	 */
+	if (__atomic_add_fetch(&barrier, 1, __ATOMIC_RELAXED) != THREAD_CNT) {
+		while (__atomic_load_n(&barrier, __ATOMIC_RELAXED) != THREAD_CNT && !psg_kill_check())
+			sched_yield();
+	}
 
 	/* generate ITERS broadcasts; receive others' broadcasts */
 	for (size_t i = 0; i < ITERS && !psg_kill_check(); i++) {
@@ -70,12 +79,6 @@ void *thread(void* arg)
 		}
 	}
 die:
-	/* don't leave other threads hanging if we died before taking barrier */
-	if (!taken_barrier) {
-		NB_err_if(
-			pthread_barrier_wait(&start_barrier)
-			, "");
-	}
 	NB_err_if(
 		mgrp_unsubscribe(group, pvc[1])
 		!= 1, "should have unsubscribed exactly 1 membership");
@@ -97,9 +100,6 @@ int main()
 	NB_die_if(!(
 		group = mgrp_new()
 		), "");
-	NB_die_if(
-		pthread_barrier_init(&start_barrier, NULL, THREAD_CNT)
-		, "");
 
 	/* run all threads */
 	for (unsigned int i=0; i < THREAD_CNT; i++) {
@@ -117,7 +117,6 @@ int main()
 			"thread %zu != expected %zu", rx_sum, expected);
 	}
 
-	pthread_barrier_destroy(&start_barrier);
 die:
 	mgrp_free(group);
 	err_cnt += psg_kill_check();  /* return any error from any thread */
