@@ -15,19 +15,18 @@
 #include <ndebug.h>
 #include <epoll_track.h>
 
-const uint64_t test_context = 42;
+const uintptr_t test_context = 42;
 const char *nonsense = "hello world";
 
 
 /*	generic_callback()
  */
-int generic_callback(int fd, uint32_t events, uint64_t context)
+int generic_callback(int fd, uint32_t events, uintptr_t context)
 {
 	int err_cnt = 0;
 
-	NB_err_if((uint64_t)context != test_context,
-		"type handling broken: %lu != %lu",
-		(uint64_t)context, test_context);
+	NB_err_if(context != test_context,
+		"type handling broken: %lu != %lu", context, test_context);
 
 	char buf[PIPE_BUF];
 	ssize_t ret = read(fd, buf, PIPE_BUF);

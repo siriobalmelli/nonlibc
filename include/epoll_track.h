@@ -30,13 +30,16 @@
 struct epoll_track; /* forward declaration only, see below */
 
 /*	eptk_context_t
- * Make user calls to epoll_track more legible by removing type warnings warnings.
+ * Make user calls to epoll_track more legible by removing type warnings.
+ * NOTE: this struct is always the size of a pointer in the architecture.
  */
 typedef union {
 	void		*pointer;
 	uintptr_t	integer;
-	epoll_data_t	classic;
-} eptk_context_t __attribute__((__transparent_union__));
+} eptk_context_t __attribute__((transparent_union));
+
+NLC_ASSERT(eptk_context_check, sizeof(void *) == sizeof(uintptr_t));
+
 
 /*	eptk_callback_t
  * Executed when epoll returns 'fd':
