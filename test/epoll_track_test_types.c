@@ -26,7 +26,7 @@ int generic_callback(int fd, uint32_t events, uintptr_t context)
 	int err_cnt = 0;
 
 	NB_err_if(context != test_context,
-		"type handling broken: %lu != %lu", context, test_context);
+		"type handling broken: %"PRIuPTR" != %"PRIuPTR, context, test_context);
 
 	char buf[PIPE_BUF];
 	ssize_t ret = read(fd, buf, PIPE_BUF);

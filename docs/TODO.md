@@ -3,11 +3,15 @@ title: TODO
 order: 0
 ---
 
+# BUGS
+
+-	ncp failing on 32-bit ARM systems
+
 # TODO
 
 These are in order by priority:
 
--	handle YCM fail with generated headers
+-	move compiled elements to separate libraries, become header-only ?
 -	provide users with a single (generated) 'nonlibc' include
 -	faux-namespace ... give symbols a 'nc_' prefix?
 -	man pages

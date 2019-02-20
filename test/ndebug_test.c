@@ -99,11 +99,14 @@ struct malloc_err_example *malloc_error()
 		ret->ptr_a = malloc(sizeof(uint64_t))
 		), "could not malloc() %zu bytes", sizeof(uint64_t));
 
-	/* 1 less than the number which will throw a compiler warning :P */
+	#pragma GCC diagnostic push
+	#pragma GCC diagnostic ignored "-Woverflow"
+	/* this is meant to fail: ignore compiler warnings */
 	size_t insane = 9223372036854775806;
 	NB_die_if(!(
 		ret->ptr_b = malloc(insane)
-		), "could not malloc() %lu (insane amount) bytes", insane);
+		), "could not malloc() %zu (insane amount) bytes", insane);
+	#pragma GCC diagnostic pop
 
 	/* successful return */
 	return ret;
