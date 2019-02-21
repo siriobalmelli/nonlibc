@@ -124,6 +124,7 @@ NLC_PUBLIC int			eptk_pwait_exec(struct epoll_track *tk,
 						const sigset_t *sigmask);
 
 
+#ifndef NDEBUG
 #define EPTK_CB_PRN(cb) "@%p: fd %d events %d ctx %p callback %p destructpr %p", \
 	cb, cb->fd, cb->events, cb->context.pointer, cb->callback, cb->destructor
 
@@ -136,5 +137,7 @@ NLC_INLINE void			eptk_debug_dump(struct epoll_track *tk)
 	cds_hlist_for_each_entry_2(curr, &tk->cb_list, node)
 		NB_inf("dump "EPTK_CB_PRN(curr));
 }
+#endif
+
 
 #endif /* epoll_track_h_ */

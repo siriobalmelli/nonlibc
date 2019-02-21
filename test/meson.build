@@ -10,8 +10,7 @@ tests = [
   'nmath_test.c',
   'npath_test.c',
   'nstring_test.c',
-  'pcg_rand_test.c',
-  'zed_dbg_test.c'
+  'pcg_rand_test.c'
   ]
 
 if host_machine.system() == 'linux'

@@ -23,8 +23,7 @@ headers = [ 'nonlibc.h',
     'pcg_rand.h',
     'posigs.h',
 
-    'ndebug.h',
-    'zed_dbg.h'
+    'ndebug.h'
 ]
 
 # O/S-specific
