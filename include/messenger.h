@@ -13,7 +13,8 @@
  * Provides a simple "group" registration and message broadcast mechanism.
  *
  * Thread-safe for multiple writers and a single reader.
- * Not safe for multiple readers on the same fd.
+ * Not safe for multiple readers, because 2 reads are needed to
+ * pull message size, then message itself, from the pipe.
  *
  * (c) 2018 Sirio Balmelli and Anthony Soenen
  */
@@ -26,7 +27,7 @@
 #define _LGPL_SOURCE
 #define URCU_INLINE_SMALL_FUNCTIONS
 #include <urcu-bp.h>
-#include <urcu/hlist.h>
+#include <urcu/rcuhlist.h>
 
 
 /*	struct message

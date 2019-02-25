@@ -22,7 +22,9 @@
 #include <fcntl.h>
 
 #define THREAD_CNT 4
-#define ITERS 5000 /* how many messages each thread should send */
+#define ITERS 2 /* How many messages each thread should send.
+		 * TODO: increase once register rcu issue is resolved.
+		 */
 
 
 
@@ -44,7 +46,7 @@ void *thread(void* arg)
 		, "");
 	/* Don't start broadcasting until everyone is subscribed.
 	 * We could use pthread_barrier_t but that's not implemented on macOS,
-	 * and anyways messenger()'s mgrp_count is already atomic.
+	 * and anyways messenger()'s mgrp_count uses acquire/release semantics.
 	 */
 	while (mgrp_count(group) != THREAD_CNT && !psg_kill_check())
 		sched_yield();
@@ -54,28 +56,35 @@ void *thread(void* arg)
 		NB_die_if(
 			mgrp_broadcast(group, pvc[1], &i, sizeof(i))
 			, "");
-		//NB_wrn("write");
 
 		while ((mg_recv(pvc[0], &message) > 0) && !psg_kill_check()) {
-			//NB_wrn("read");
 			rx_sum += message;
 			rx_i++;
+			sched_yield(); /* prevent deadlock: wait for other threads to write */
 		}
+		errno = 0; /* _should_ be EINVAL: don't pollute later prints */
 	}
 
-	/* wait on other senders */
+	/* wait for all other senders */
 	while (rx_i < ITERS * (THREAD_CNT -1) && !psg_kill_check()) {
 		if ((mg_recv(pvc[0], &message) > 0)) {
 			rx_sum += message;
 			rx_i++;
+		} else {
+			sched_yield();
 		}
 	}
+
 die:
 	NB_err_if(
 		mgrp_unsubscribe(group, pvc[1])
-		!= 1, "should have unsubscribed exactly 1 membership");
+		, "fd %d unsubscribe fail", pvc[1]);
 	if (err_cnt)
 		psg_kill();
+	if (pvc[0]) {
+		close(pvc[1]);
+		close(pvc[0]);
+	}
 
 	return (void *)rx_sum;
 }

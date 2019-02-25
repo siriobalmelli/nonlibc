@@ -60,11 +60,14 @@ void mgrp_free(struct mgrp *grp)
 	if (!grp)
 		return;
 
-	struct mgrp_membership *curr = NULL, *e = NULL;
-	cds_hlist_for_each_entry_safe_2(curr, e, &grp->members, node) {
-		cds_hlist_del(&curr->node);
+	struct mgrp_membership *curr = NULL;
+	rcu_read_lock();
+	cds_hlist_for_each_entry_rcu_2(curr, &grp->members, node) {
+		NB_wrn("free fd %d (bad)", curr->in_fd);
+		cds_hlist_del_rcu(&curr->node);
 		free(curr);
 	}
+	rcu_read_unlock();
 
 	free(grp);
 }
@@ -99,10 +102,14 @@ int mgrp_subscribe(struct mgrp *grp, int my_fd)
 		), "fail alloc size %zu", sizeof(*mem));
 	mem->in_fd = my_fd;
 
-	cds_hlist_add_head(&mem->node, &grp->members);
-	grp->count++;
+	rcu_read_lock();
+	cds_hlist_add_head_rcu(&mem->node, &grp->members);
+	rcu_read_unlock();
+	NB_inf("++ fd %d", mem->in_fd);
 
+	__atomic_add_fetch(&grp->count, 1, __ATOMIC_RELEASE);
 	return err_cnt;
+
 die:
 	free(mem);
 	return err_cnt;
@@ -110,22 +117,26 @@ die:
 
 /*	mgrp_unsubscribe()
  * Remove 'my_fd' from 'grp'.
- * Returns number of memberships deleted.
+ * Returns 0 if membership removed.
  */
 int mgrp_unsubscribe(struct mgrp *grp, int my_fd)
 {
-	int removed = 0;
-	struct mgrp_membership *curr = NULL, *e = NULL;
-	/* TODO: change to an O(1) in a hash list? */
-	cds_hlist_for_each_entry_safe_2(curr, e, &grp->members, node) {
+	int ret = 1;
+
+	struct mgrp_membership *curr = NULL;
+	rcu_read_lock();
+	cds_hlist_for_each_entry_rcu_2(curr, &grp->members, node) {
 		if (curr->in_fd == my_fd) {
-			cds_hlist_del(&curr->node);
+			cds_hlist_del_rcu(&curr->node);
 			free(curr);
-			removed++;
-			grp->count--;
+			__atomic_sub_fetch(&grp->count, 1, __ATOMIC_RELEASE);
+			ret = 0;
+			break;
 		}
 	}
-	return removed;
+	rcu_read_unlock();
+
+	return ret;
 }
 
 /*	mgrp_broadcast()
@@ -138,7 +149,8 @@ int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
 	int err_cnt = 0;
 
 	struct mgrp_membership *curr = NULL;
-	cds_hlist_for_each_entry_2(curr, &grp->members, node) {
+	rcu_read_lock();
+	cds_hlist_for_each_entry_rcu_2(curr, &grp->members, node) {
 		/* don't send to self */
 		if (curr->in_fd == my_fd)
 			continue;
@@ -146,6 +158,7 @@ int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
 		if (mg_send(curr->in_fd, data, len) != len)
 			err_cnt++;
 	}
+	rcu_read_unlock();
 
 	return err_cnt;
 }
