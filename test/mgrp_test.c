@@ -23,7 +23,7 @@
 
 #define THREAD_CNT 4
 #define ITERS 2 /* How many messages each thread should send.
-		 * TODO: increase once register rcu issue is resolved.
+		 * TODO: increase once registration/rcu issue is resolved.
 		 */
 
 
@@ -60,7 +60,7 @@ void *thread(void* arg)
 		while ((mg_recv(pvc[0], &message) > 0) && !psg_kill_check()) {
 			rx_sum += message;
 			rx_i++;
-			sched_yield(); /* prevent deadlock: wait for other threads to write */
+			sched_yield(); /* prevent deadlock: give other threads a chance to write */
 		}
 		errno = 0; /* _should_ be EINVAL: don't pollute later prints */
 	}
