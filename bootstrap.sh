@@ -38,7 +38,9 @@ cscope -b -q -U -I ./include -s ./src -s ./util -s ./test
 #   break valgrind hard
 pushd ./build-debugoptimized-gcc \
 	&& meson test --suite="core" \
-		--wrap="valgrind --leak-check=full --show-leak-kinds=all --error-exitcode=1"
+		--wrap="valgrind \
+			--leak-check=full --show-leak-kinds=all \
+			--track-origins=yes --error-exitcode=1"
 popd
 
 ## build and test sanitizers
