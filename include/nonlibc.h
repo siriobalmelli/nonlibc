@@ -144,12 +144,50 @@ Fall back on less accurate methods.
 }
 
 
-#ifndef be64toh
 /* Explicitly provide endianness macros, since 'endian.h' isn't everywhere
  * (I'm looking at you, Darwin BSD!).
  * Bonus: the implementation is GCC builtins :)
- * #include <endian.h>
+ * // #include <endian.h>
+ * NOTE: of course, it's not that simple. Certain systems define _some_ but not
+ * _all_ of these macros, so we need to explicitly check for and undef every one.
  */
+#ifdef le16toh
+#undef le16toh
+#endif
+#ifdef le32toh
+#undef le32toh
+#endif
+#ifdef le64toh
+#undef le64toh
+#endif
+#ifdef be16toh
+#undef be16toh
+#endif
+#ifdef be32toh
+#undef be32toh
+#endif
+#ifdef be64toh
+#undef be64toh
+#endif
+#ifdef h16tole
+#undef h16tole
+#endif
+#ifdef h32tole
+#undef h32tole
+#endif
+#ifdef h64tole
+#undef h64tole
+#endif
+#ifdef h16tobe
+#undef h16tobe
+#endif
+#ifdef h32tobe
+#undef h32tobe
+#endif
+#ifdef h64tobe
+#undef h64tobe
+#endif
+
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define le16toh(x) (x)
 #define le32toh(x) (x)
@@ -180,7 +218,6 @@ Fall back on less accurate methods.
 
 #else
 #error "Architecture endinanness not supported. Send espresso to maintainer"
-#endif
 #endif
 
 

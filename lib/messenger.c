@@ -45,6 +45,8 @@ ssize_t mg_recv(int from_fd, void *data_out)
 	ret = read(from_fd, &sz, sizeof(sz));
 	if (ret > 0) {
 		ret = read(from_fd, data_out, sz);
+		NB_err_if(ret != sz,
+			"secondary read sz %"PRIuFAST16" should never fail", sz);
 		if (ret > 0)
 			return sz;
 	}
@@ -82,6 +84,7 @@ struct mgrp *mgrp_new()
 	NB_die_if(!(
 		grp = calloc(1, sizeof *grp)
 		), "fail alloc size %zu", sizeof(*grp));
+	CDS_INIT_HLIST_HEAD(&grp->members);
 	return grp;
 die:
 	mgrp_free(grp);
@@ -102,9 +105,7 @@ int mgrp_subscribe(struct mgrp *grp, int my_fd)
 		), "fail alloc size %zu", sizeof(*mem));
 	mem->in_fd = my_fd;
 
-	rcu_read_lock();
 	cds_hlist_add_head_rcu(&mem->node, &grp->members);
-	rcu_read_unlock();
 	NB_inf("++ fd %d", mem->in_fd);
 
 	__atomic_add_fetch(&grp->count, 1, __ATOMIC_RELEASE);
@@ -124,17 +125,15 @@ int mgrp_unsubscribe(struct mgrp *grp, int my_fd)
 	int ret = 1;
 
 	struct mgrp_membership *curr = NULL;
-	rcu_read_lock();
 	cds_hlist_for_each_entry_rcu_2(curr, &grp->members, node) {
 		if (curr->in_fd == my_fd) {
-			cds_hlist_del_rcu(&curr->node);
+			cds_hlist_del(&curr->node);
 			free(curr);
 			__atomic_sub_fetch(&grp->count, 1, __ATOMIC_RELEASE);
 			ret = 0;
 			break;
 		}
 	}
-	rcu_read_unlock();
 
 	return ret;
 }
@@ -149,7 +148,6 @@ int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
 	int err_cnt = 0;
 
 	struct mgrp_membership *curr = NULL;
-	rcu_read_lock();
 	cds_hlist_for_each_entry_rcu_2(curr, &grp->members, node) {
 		/* don't send to self */
 		if (curr->in_fd == my_fd)
@@ -158,7 +156,6 @@ int mgrp_broadcast(struct mgrp *grp, int my_fd, void *data, size_t len)
 		if (mg_send(curr->in_fd, data, len) != len)
 			err_cnt++;
 	}
-	rcu_read_unlock();
 
 	return err_cnt;
 }
