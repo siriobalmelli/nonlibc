@@ -27,6 +27,7 @@ These are in order by priority:
 -	Handle generated headers in YCM clang completer?
 -	compilation: ThinLTO
 - look at [systemd](https://github.com/systemd/systemd) for code quality, Meson usage, packaging, etc
+- also look at <https://github.com/BytePackager/packagecore> with example <https://github.com/jarun/nnn/blob/master/packagecore.yaml>
 
 ## TODO: lifo
 
