@@ -6,10 +6,14 @@
 
   # deps
   system ? builtins.currentSystem,
-  nixpkgs ? import ./nixpkgs { inherit system; }
+  nixpkgs ? import (builtins.fetchGit {
+    url = "https://github.com/siriobalmelli-foss/nixpkgs.git";
+    ref = "sirio";
+    }) {}
 }:
 
 with nixpkgs;
+
 
 stdenv.mkDerivation rec {
   name = "nonlibc";
