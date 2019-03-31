@@ -13,16 +13,16 @@ Collection of standard-not-standard utilities for the discerning C programmer.
 ## Yeah, but what does it do
 
 The functions in this library solve or alleviate a bunch of commonplace
-	problems/annoyances related to writing programs in C.
+    problems/annoyances related to writing programs in C.
 
 This is stuff not addressed in `libc` or `GLib`
-	(or for which code therein might be overkill or disliked by the author).
+    (or for which code therein might be overkill or disliked by the author).
 
 The focus is on solving problems with a healthy dose of minimalism
-	and performance (rarely orthogonal qualities, as it were).
+    and performance (rarely orthogonal qualities, as it were).
 
 This is not a hodgepodge - the code here is reliable
-	and being used in the real world.
+    and being used in the real world.
 
 A quick rundown of the contents is available [here](docs/overview).
 
