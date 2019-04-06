@@ -21,7 +21,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#define THREAD_CNT 4
+#define THREAD_CNT 2
 #define ITERS 2 /* How many messages each thread should send.
 		 * TODO: increase once registration/rcu issue is resolved.
 		 */
