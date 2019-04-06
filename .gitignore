@@ -60,3 +60,4 @@ _site/
 .DS_Store
 result*
 .mypy_cache
+.bundle

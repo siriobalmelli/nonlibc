@@ -15,10 +15,9 @@ in
     src = if lib.inNixShell then null else nix-gitignore.gitignoreSource [] ./.;
 
     # build will fail because template will attempt to look up github links
-    buildPhase = ''
+    installPhase = ''
       bundle exec jekyll build
     '';
-    installPhase = "";
 
     shellHook = ''
       exec ${jekyll_env}/bin/jekyll serve --watch
