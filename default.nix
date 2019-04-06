@@ -51,7 +51,7 @@ stdenv.mkDerivation rec {
   outputs = [ "out" ];
 
   # just work with the current directory (aka: Git repo), no fancy tarness
-    src = if lib.inNixShell then null else nix-gitignore.gitignoreSource [] ./.;
+  src = nix-gitignore.gitignoreSource [] ./.;
 
   # Override the setupHook in the meson nix der. - will config ourselves thanks
   meson = pkgs.meson.overrideAttrs ( oldAttrs: rec { setupHook = ""; });
