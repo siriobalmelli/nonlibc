@@ -125,6 +125,8 @@ int main(int argc, char **argv)
 	if (count < 2)
 		NB_die("missing SOURCE_FILE or DEST_FILE");
 
+	if (errno == 0x26) errno = 0;  /* weird getopt errno, pointedly ignore */
+
 	/* SOURCE_FILE DEST_FILE */
 	dst_path = argv[optind + 1];
 	if (count == 2 && !n_is_dir(dst_path)) {

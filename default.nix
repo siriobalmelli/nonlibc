@@ -62,6 +62,11 @@ stdenv.mkDerivation rec {
   patchPhase = ''
     patchShebangs util/test_fnvsum.py
     patchShebangs util/test_ncp.py
+
+    # see include/nlc_linuxversion.h for the gory details
+    if [ -e /usr/include/linux/version.h ]; then
+      cp -fv /usr/include/linux/version.h include/nlc_linuxversion.h
+    fi
   '';
 
   # build
