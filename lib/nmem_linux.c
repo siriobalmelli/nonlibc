@@ -4,20 +4,7 @@
 
 #include <nmem.h>
 #include <ndebug.h>
-#include <limits.h> /* PIPE_BUF */
-
-
-/* memfd_create() as a syscall.
-The advantage of memfd is that data is never written back to disk,
-	yet we can splice into it as if it were a file.
-If not available, we fall back on a plain mmap()ed file in "/tmp".
-*/
-#include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
-	#include <sys/syscall.h>
-	#include <linux/memfd.h>
-#endif
-
+#include <limits.h> /* PIPE_BUF, PATH_MAX */
 
 /*	nmem_alloc()
 Map 'len' bytes of memory.
@@ -34,9 +21,15 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 	NB_die_if(!len || !out, "args");
 	out->len = len;
 
+	#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+	out->tempfile = NULL;
+	#endif
+
 	if (!tmp_dir) {
-		/* memfd is preferable: splice in and out of virtual memory
-			without disk writeback.
+		/* memfd_create() as a syscall.
+		The advantage of memfd is that data is never written back to disk,
+			yet we can splice into it as if it were a file.
+		If not available, we fall back on a plain mmap()ed file in "/tmp".
 		*/
 		#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
 		out->o_flags = O_NONBLOCK;
@@ -53,10 +46,33 @@ int nmem_alloc(size_t len, const char *tmp_dir, struct nmem *out)
 
 	/* open an fd */
 	if (tmp_dir) {
-		out->o_flags = O_RDWR | O_TMPFILE | O_NONBLOCK;
+		out->o_flags = O_RDWR | O_NONBLOCK;
+
+		/* previous kernels don't implement O_TMPFILE */
+		#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+		out->o_flags |= O_TMPFILE;
 		NB_die_if((
 			out->fd = open(tmp_dir, out->o_flags, NMEM_PERMS)
 			) == -1, "failed to open temp file in %s", tmp_dir);
+
+		#else
+		/* If your kernel is this old, you probably care more about
+ 		 * pedantic safety than speed.
+ 		 */
+		const char *temp_template = "ncp_tempXXXXXX";
+		size_t alloc_len = strnlen(temp_template, PATH_MAX)
+			+ strnlen(tmp_dir, PATH_MAX)
+			+ 2; /* allow for middle '/' and trailing '\0' */
+		NB_die_if(alloc_len > PATH_MAX, "tmp_dir path too long: '%s'", tmp_dir);
+		NB_die_if(!(
+			out->tempfile = malloc(alloc_len)
+			), "failed alloc zs %zu", alloc_len);
+		snprintf(out->tempfile, alloc_len, "%s/%s", tmp_dir, temp_template);
+
+		NB_die_if((
+			out->fd = mkostemp(out->tempfile, out->o_flags)
+			) == -1, "failed to open temp file '%s'", out->tempfile);
+		#endif
 	}
 
 	/* size and map */
@@ -86,6 +102,7 @@ void nmem_free(struct nmem *nm, const char *deliver_path)
 	nm->mem = NULL;
 
 	/* deliver if requested */
+	#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 	if (deliver_path && (nm->o_flags & O_TMPFILE)) {
 		char src[32];
 		snprintf(src, 32, "/proc/self/fd/%d", nm->fd);
@@ -93,12 +110,26 @@ void nmem_free(struct nmem *nm, const char *deliver_path)
 			linkat(AT_FDCWD, src, AT_FDCWD, deliver_path, AT_SYMLINK_FOLLOW)
 			, "%s -> %s", src, deliver_path);
 	}
+	#else
+	if (deliver_path) {
+		NB_err_if(
+			link(nm->tempfile, deliver_path)
+			, "failed to link '%s' -> '%s'", nm->tempfile, deliver_path);
+		NB_err_if(
+			unlink(nm->tempfile)
+			, "failed to unlink tempfile '%s'", nm->tempfile);
+	}
+	#endif
 
 	/* close */
 	if (nm->fd != -1)
 		close(nm->fd);
 	nm->o_flags = 0;
 	nm->fd = -1;
+
+	#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+	free(nm->tempfile);
+	#endif
 }
 
 

@@ -40,7 +40,7 @@ die:
 
 /*	define nlc_urand_() to call the proper implementation */
 #if defined(__linux__)
-	#include <linux/version.h>
+	#include <nlc_linuxversion.h>
 
 	/* preference: use the proper syscall */
 	#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)

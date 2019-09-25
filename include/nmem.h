@@ -20,6 +20,17 @@ Library of functions to handle zero-copy I/O
 #define NMEM_SPLICE_FLAGS ( SPLICE_F_GIFT | SPLICE_F_MOVE )
 
 
+#ifdef __linux__
+#include <nlc_linuxversion.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,17,0)
+#include <sys/syscall.h>
+#include <linux/memfd.h>
+#else
+#include <stdlib.h>
+#endif
+#endif
+
+
 struct nmem {
 	int32_t		fd;
 	uint32_t	o_flags; /* only open() flags valid here */
@@ -30,6 +41,11 @@ union {
 	};
 	struct iovec	iov;
 };
+#ifdef __linux__
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,11,0)
+	char		*tempfile;
+#endif
+#endif
 };
 
 
