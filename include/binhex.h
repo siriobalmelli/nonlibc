@@ -9,6 +9,7 @@
 #include <nonlibc.h>
 #include <stdint.h>
 #include <string.h> /* memset() */
+#include <nlc_endian.h>
 
 NLC_PUBLIC	size_t b2hx(const unsigned char *bin, char *hex, size_t byte_cnt);
 /* Big Endian */

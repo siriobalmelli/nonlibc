@@ -17,6 +17,7 @@ headers = [
   'lifo.h',
   'messenger.h',
   'ndebug.h',
+  'nlc_endian.h',
   'nlc_urand.h',
   'nmath.h',
   'nmem.h',
