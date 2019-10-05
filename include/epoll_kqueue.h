@@ -15,6 +15,7 @@
 #define EPOLLOUT	0x04
 #define EPOLLERR	0x08
 #define EPOLLHUP	0x10
+#define EPOLLMSG	0x20  /* TODO: no clue what this does */
 
 #define EPOLL_CTL_ADD	1
 #define EPOLL_CTL_DEL	2
