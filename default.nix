@@ -21,7 +21,7 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "Collection of standard-not-standard utilities for the discerning C programmer";
-    homepage = https://siriobalmelli.github.io/nonlibc/;
+    homepage = https://siriobalmelli.github.io/nonlibc;
     license = licenses.lgpl21Plus;
     platforms = platforms.unix;
     maintainers = [ "https://github.com/siriobalmelli" ];
