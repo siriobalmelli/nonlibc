@@ -13,14 +13,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <ndebug.h>
-
-#ifdef __linux__
-#include <sys/epoll.h>
-#elif defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-#include <epoll_kqueue.h>
-#else
-#error "epoll compatibility implemented for this OS"
-#endif
+#include <nlc_epoll.h>
 
 #define _LGPL_SOURCE
 #define URCU_INLINE_SMALL_FUNCTIONS

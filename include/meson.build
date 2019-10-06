@@ -8,15 +8,18 @@ conf_data = configuration_data()
 ##
 headers = [
   'nonlibc.h',
+  'ndebug.h',
+
+  'epoll_track.h',
+  'nlc_epoll.h',
 
   'b2hx.h',
   'binhex.h',
-  'epoll_track.h',
-  'fnv.h',
   'hx2b.h',
+
+  'fnv.h',
   'lifo.h',
   'messenger.h',
-  'ndebug.h',
   'nlc_endian.h',
   'nlc_urand.h',
   'nmath.h',
