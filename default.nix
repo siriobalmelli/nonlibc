@@ -16,7 +16,7 @@ with nixpkgs;
 
 stdenv.mkDerivation rec {
   name = "nonlibc";
-  version = "0.4.1";
+  version = "0.4.2";
 
   meta = with stdenv.lib; {
     description = "Collection of standard-not-standard utilities for the discerning C programmer";
