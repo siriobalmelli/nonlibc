@@ -1,5 +1,6 @@
 lib_files = [
   'binhex.c',
+  'epoll_track.c',
   'fnv.c',
   'lifo.c',
   'messenger.c',
@@ -11,12 +12,12 @@ lib_files = [
 
 if host_machine.system() == 'linux'
   lib_files += [
-    'epoll_track.c',
     'nmem_linux.c'
     ]
 
 elif host_machine.system() == 'darwin' or host_machine.system() == 'freebsd'
   lib_files += [
+    'epoll_kqueue.c',
     'nmem_bsd.c'
     ]
 endif

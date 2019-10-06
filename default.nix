@@ -8,12 +8,11 @@
   system ? builtins.currentSystem,
   nixpkgs ? import (builtins.fetchGit {
     url = "https://github.com/siriobalmelli-foss/nixpkgs.git";
-    ref = "sirio";
+    ref = "master";
     }) {}
 }:
 
 with nixpkgs;
-
 
 stdenv.mkDerivation rec {
   name = "nonlibc";
@@ -21,13 +20,13 @@ stdenv.mkDerivation rec {
 
   meta = with stdenv.lib; {
     description = "Collection of standard-not-standard utilities for the discerning C programmer";
-    homepage = https://siriobalmelli.github.io/nonlibc/;
+    homepage = https://siriobalmelli.github.io/nonlibc;
     license = licenses.lgpl21Plus;
     platforms = platforms.unix;
     maintainers = [ "https://github.com/siriobalmelli" ];
   };
 
-  inputs = [
+  buildInputs = [
     clang
     gcc
     meson
@@ -35,12 +34,12 @@ stdenv.mkDerivation rec {
     pandoc
     pkgconfig
     python3
-  ];
-  buildInputs = if ! lib.inNixShell then inputs else inputs ++ [
-    nixpkgs.cscope
-    nixpkgs.gdb
-    nixpkgs.valgrind
-    nixpkgs.which
+  ] ++ lib.optional lib.inNixShell [
+    cscope
+    gdb
+    lldb
+    valgrind
+    which
   ];
 
   propagatedBuildInputs = [
