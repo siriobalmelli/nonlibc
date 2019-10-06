@@ -10,7 +10,10 @@ tests = [
   'nmath_test.c',
   'npath_test.c',
   'nstring_test.c',
-  'pcg_rand_test.c'
+  'pcg_rand_test.c',
+  'epoll_track_test.c',
+  'epoll_track_test_types.c',
+  'epoll_track_test_destructor.c'
   ]
 
 if host_machine.system() == 'linux'
