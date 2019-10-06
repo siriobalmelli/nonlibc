@@ -16,14 +16,6 @@ tests = [
   'epoll_track_test_destructor.c'
   ]
 
-if host_machine.system() == 'linux'
-  tests += [
-    'epoll_track_test.c',
-    'epoll_track_test_types.c',
-    'epoll_track_test_destructor.c'
-    ]
-endif
-
 
 # pthread dependency only for tests, not for nonlibc itself
 test_deps = deps + [dependency('threads')]
