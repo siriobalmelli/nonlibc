@@ -5,7 +5,6 @@ project('nonlibc', 'c',
   version : '0.4.2',
   license : 'LGPL-2.1+',
   default_options : [
-    'b_coverage=true',
     'c_std=gnu11'
     ])
 description = 'Collection of standard-not-standard utilities for the discerning C programmer'
@@ -18,8 +17,6 @@ add_project_arguments([
     '-fasynchronous-unwind-tables',
     '-fexceptions',
     '-fstack-protector-strong',
-    '-pipe',
-    '-Wall',
     '-Werror=format-security',
     '-Werror=implicit-function-declaration'
     ],
