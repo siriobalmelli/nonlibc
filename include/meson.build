@@ -35,6 +35,10 @@ if host_machine.system() == 'darwin' or host_machine.system() == 'freebsd'
   headers += [
     'epoll_kqueue.h'
     ]
+elif host_machine.system() == 'linux'
+  headers += [
+    'nlc_linuxversion.h'
+  ]
 endif
 
 # We assume that we will be statically linked if we're a subproject;
