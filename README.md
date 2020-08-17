@@ -3,7 +3,7 @@ title: NonlibC
 order: 100
 ---
 
-# nonlibc [![Build Status](https://travis-ci.org/siriobalmelli/nonlibc.svg?branch=master)](https://travis-ci.org/siriobalmelli/nonlibc)
+# nonlibc [![Build Status](https://travis-ci.org/siriobalmelli/nonlibc.svg?branch=master)](https://travis-ci.org/siriobalmelli/nonlibc) [![Hits-of-Code](https://hitsofcode.com/github/siriobalmelli/nonlibc)](https://hitsofcode.com/view/github/siriobalmelli/nonlibc)
 
 Collection of standard-not-standard utilities for the discerning C programmer.
 
