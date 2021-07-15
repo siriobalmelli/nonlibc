@@ -1,14 +1,10 @@
-{
-  # options
-  buildtype ? "release",
-  compiler ? "clang",
-  mesonFlags ? "",
+{ buildtype ? "release"
+, compiler ? "clang"
+, mesonFlags ? ""
 
-  # deps
-  system ? builtins.currentSystem,
-  nixpkgs ? import (builtins.fetchGit {
+, nixpkgs ? import (builtins.fetchGit {
     url = "https://siriobalmelli@github.com/siriobalmelli-foss/nixpkgs.git";
-    ref = "master";
+    ref = "refs/tags/sirio-2021-07-12";
     }) {}
 }:
 
@@ -18,12 +14,12 @@ stdenv.mkDerivation rec {
   name = "nonlibc";
   version = "0.4.2";
 
-  meta = with stdenv.lib; {
+  meta = with lib; {
     description = "Collection of standard-not-standard utilities for the discerning C programmer";
     homepage = https://siriobalmelli.github.io/nonlibc;
     license = licenses.lgpl21Plus;
     platforms = platforms.unix;
-    maintainers = [ "https://github.com/siriobalmelli" ];
+    maintainers = with maintainers; [ siriobalmelli ];
   };
 
   buildInputs = [
