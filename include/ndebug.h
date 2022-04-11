@@ -63,6 +63,7 @@
 #include <libgen.h>	/* basename() */
 #include <string.h>	/* strerror() */
 #include <inttypes.h>	/* PRIu64 etc. for reliable printf across platforms */
+#include "nonlibc.h"
 
 
 /* "global" (per-translation-unit) variables.
@@ -203,7 +204,7 @@ static void __attribute__ ((constructor)) ND_start()
  */
 #ifndef NDEBUG
 #define NB_wrn_if(CONDITION, WARNING, ...)					\
-	if (__builtin_expect(CONDITION, 0)) {					\
+	if (NLC_UNLIKELY(CONDITION)) {					\
 		NB_wrn(WARNING, ##__VA_ARGS__);					\
 	}
 #else
@@ -225,7 +226,7 @@ static void __attribute__ ((constructor)) ND_start()
  * Test CONDITION and call NB_err() if true.
  */
 #define NB_err_if(CONDITION, ERROR, ...)					\
-	if (__builtin_expect(CONDITION, 0)) {					\
+	if (NLC_UNLIKELY(CONDITION)) {					\
 		NB_err(ERROR, ##__VA_ARGS__);					\
 	}
 
@@ -245,7 +246,7 @@ static void __attribute__ ((constructor)) ND_start()
  * Test CONDITION and call NB_die() if true.
  */
 #define NB_die_if(CONDITION, DEATH, ...)					\
-	if (__builtin_expect(CONDITION, 0)) {					\
+	if (NLC_UNLIKELY(CONDITION)) {					\
 		NB_die(DEATH, ##__VA_ARGS__);					\
 	}
 

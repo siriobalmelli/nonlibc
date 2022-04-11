@@ -59,7 +59,7 @@
 
 /*	branch hints
  */
-#define NLC_UNLIKELY(test) (__builtin_expect(test, 0))
+#define NLC_UNLIKELY(test) (__builtin_expect(!!(test), 0))
 
 
 /*	benchmarking!
