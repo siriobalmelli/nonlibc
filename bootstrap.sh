@@ -1,4 +1,3 @@
-#!/bin/bash
 # Compile and test all variants.
 #+	... if you're missing tools (or running a blank/vanilla system),
 #+	see https://github.com/siriobalmelli/toolbench

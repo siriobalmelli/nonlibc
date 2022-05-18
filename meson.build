@@ -2,7 +2,7 @@
 #   - The Meson build setup must stand alone and *not* depend on Nix
 #   - Sirio sees no way to have Nix parse these variables when building the derivation
 project('nonlibc', 'c',
-  version : '0.4.2',
+  version : '0.5.0',
   license : 'LGPL-2.1+',
   default_options : [
     'c_std=gnu11'
