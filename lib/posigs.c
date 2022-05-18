@@ -2,43 +2,21 @@
 #include <posigs.h>
 
 
-sig_atomic_t psg_kill_ = 0;
+sig_atomic_t psg_kill_ = 0; /* access only with atomics */
 
 
-/*	psg_handler_default()
-
-The most basic of functional signal handling
-	for an application.
-*/
+/**
+ * The most basic of functional signal handling for an application.
+ */
 static void psg_handler_default_(int signum)
 {
-	NB_line();
-	switch (signum) {
-	case SIGTERM:
-		NB_inf("SIGTERM");
-		break;
-	case SIGINT:
-		NB_inf("SIGINT");
-		break;
-	default:
-		NB_err("don't know what to do with SIG %d", signum);
-	}
+	/* WARNING: printf is not signal-handler safe; don't use it here. */
 
 	/* signal program to terminate */
 	psg_kill();
 }
 
 
-/*	psg_sigsetup()
-
-Boilerplate to set a common-sense function handler for
-	termination signals encountered by a generic POSIX application.
-
-If 'handler' is NULL, installs 'psg_handler_default_()'
-	which will just log signal and set the kill flag.
-
-Returns 0 on success.
-*/
 int psg_sigsetup(void (*handler)(int signum))
 {
 	int err_cnt = 0;
@@ -50,14 +28,11 @@ int psg_sigsetup(void (*handler)(int signum))
 	/* all the (handleable) glibc termination signals */
 	int signals[] = { SIGTERM, SIGINT, SIGQUIT, SIGHUP };
 
-	for (int i=0; i < NLC_ARRAY_LEN(signals); i++) {
-		NB_err_if(sigaction(signals[i], NULL, &old)
-			, "SIG %d", signals[i]);
+	for (int i = 0; i < NLC_ARRAY_LEN(signals); i++) {
+		NB_err_if(sigaction(signals[i], NULL, &old), "SIG %d", signals[i]);
 		/* avoid installing handler if signal is being ignored */
-		if (old.sa_handler != SIG_IGN) {
-			NB_err_if(sigaction(signals[i], &action, NULL)
-				, "SIG %d", signals[i]);
-		}
+		if (old.sa_handler != SIG_IGN)
+			NB_err_if(sigaction(signals[i], &action, NULL), "SIG %d", signals[i]);
 	}
 
 	return err_cnt;
