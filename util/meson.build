@@ -6,6 +6,7 @@ fnvsum = executable('fnvsum', 'fnvsum.c',
     install : true
     )
 
+# TODO: fix breakage when library is wrapped
 test('fnvsum',
     find_program('test_fnvsum.py'),
     args    : fnvsum.full_path(),
@@ -19,6 +20,7 @@ ncp = executable('ncp', 'ncp.c',
     install             : true
     )
 
+# TODO: fix breakage when library is wrapped
 test('ncp',
     find_program('test_ncp.py'),
     args    : ncp.full_path(),

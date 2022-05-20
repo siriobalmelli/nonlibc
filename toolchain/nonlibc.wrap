@@ -1,8 +1,15 @@
-# nonlibc description for the Meson Wrap dependency system
-#+	<http://mesonbuild.com/Wrap-dependency-system-manual.html>
-# Put this file in your 'subprojects' dir, then declare nonlibc in your 'meson.build' file like so:
-#+	`nonlibc_dep = dependency('nonlibc', fallback : ['nonlibc', 'nonlibc_dep'])`
+##
+# nonlibc description for the Meson Wrap dependency system, see
+# http://mesonbuild.com/Wrap-dependency-system-manual.html
+#
+# To use, put this file in your 'subprojects' dir,
+# then declare nonlibc in your 'meson.build' file as follows:
+#
+# nonlibc_dep = dependency('nonlibc', fallback : ['nonlibc', 'nonlibc_dep'])
+#
+# NOTE: you will have to bump the revision tag when nonlibc pushes a new release.
+##
 [wrap-git]
 directory=nonlibc
 url=https://github.com/siriobalmelli/nonlibc.git
-revision=head
+revision=v0.5.0
