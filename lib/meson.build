@@ -57,12 +57,19 @@ pkg.generate(
   )
 
 
-# Export a shared dependency.
+##
+# Export both a static and a shared dependency.
+#
 # Force dependers to have an rpath entry pointing to where we KNOW we'll install.
 # This fixes both Nix and non-nix projects (providing 'prefix' is set correctly),
 # and does so OPAQUELY (depender doesn't have to add an 'install_rpath' directive).
+#
+# Export the static dependency _first_ so that superprojects with the stanza
+# 'nonlibc_dep = dependency('nonlibc', fallback : ['nonlibc', 'nonlibc_dep'], static: true)'
+# ... actually get a static dependency.
+##
 rpath = get_option('prefix') + '/' + get_option('libdir')
-nonlibc_dep = declare_dependency(link_with : nonlibc,
+nonlibc_dep = declare_dependency(link_with : [nonlibc.get_static_lib(), nonlibc],
 					include_directories : inc,
 					dependencies : deps,
 					link_args : '-Wl,-rpath,' + rpath)
