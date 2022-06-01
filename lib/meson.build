@@ -35,7 +35,10 @@ nonlibc = both_libraries(
 # Make linking work on linux systems without breaking nix
 p = get_option('prefix')
 if host_machine.system() == 'linux' and not p.startswith('/nix')
-  meson.add_install_script('ldconfig', p + '/' + get_option('libdir'))
+  meson.add_install_script(
+    'ldconfig', p + '/' + get_option('libdir'),
+    skip_if_destdir : true
+  )
 endif
 
 
