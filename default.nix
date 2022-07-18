@@ -4,7 +4,7 @@
 
 , nixpkgs ? import (builtins.fetchGit {
     url = "https://siriobalmelli@github.com/siriobalmelli-foss/nixpkgs.git";
-    ref = "refs/tags/sirio-2021-07-12";
+    ref = "refs/tags/sirio-2022-07-15";
     }) {}
 }:
 
@@ -12,7 +12,7 @@ with nixpkgs;
 
 stdenv.mkDerivation rec {
   name = "nonlibc";
-  version = "0.5.0";
+  version = with builtins; replaceStrings ["\n" " "] ["" ""] (readFile ./VERSION);
 
   meta = with lib; {
     description = "Collection of standard-not-standard utilities for the discerning C programmer";
