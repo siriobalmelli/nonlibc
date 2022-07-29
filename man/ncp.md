@@ -48,7 +48,7 @@ print usage and exit
 # EXAMPLE
 
 ```bash
-$ cp /a/file /a/dest
+$ ncp /a/file /a/dest
 $
 ```
 
