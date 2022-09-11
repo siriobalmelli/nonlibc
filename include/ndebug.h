@@ -58,12 +58,12 @@
  * (c) 2018 Sirio Balmelli
  */
 
-#include <errno.h>
-#include <stdio.h>
-#include <libgen.h>	/* basename() */
-#include <string.h>	/* strerror() */
-#include <inttypes.h>	/* PRIu64 etc. for reliable printf across platforms */
 #include "nonlibc.h"
+#include <errno.h>
+#include <inttypes.h> /* PRIu64 etc. for reliable printf across platforms */
+#include <libgen.h> /* basename() */
+#include <stdio.h>
+#include <string.h> /* strerror() */
 
 
 /* "global" (per-translation-unit) variables.
@@ -71,8 +71,8 @@
  * or overidden on a per-function basis.
  */
 static __attribute__((unused)) int err_cnt = 0;
-static int fdout;
-static int fderr;
+static int			   fdout;
+static int			   fderr;
 
 /* output function can be overridden, but at compile-time only */
 #ifndef NB_PRN
@@ -82,8 +82,8 @@ static int fderr;
 
 /*	ND_start()
  * Initializer to set runtime variables.
-*/
-static void __attribute__ ((constructor)) ND_start()
+ */
+static void __attribute__((constructor)) ND_start()
 {
 	fdout = fileno(stdout);
 	fderr = fileno(stderr);
@@ -104,14 +104,12 @@ static void __attribute__ ((constructor)) ND_start()
  * - print instrumentation
  * - 'errno' is printed if set, AND THEN RESET.
  */
-#define NB_LOG(FD, PREFIX, MESSAGE, ...)					\
-	NB_PRN(FD, "[%s] %10s:%03d +%-15s\t:: " MESSAGE "\n",			\
-		PREFIX, basename(__FILE__),					\
-		__LINE__, __FUNCTION__,						\
-		##__VA_ARGS__);							\
-	if (errno) {								\
-		NB_PRN(FD, "\t!errno: 0x%02x|%s!\n", errno, strerror(errno));	\
-		errno = 0;							\
+#define NB_LOG(FD, PREFIX, MESSAGE, ...)                                                  \
+	NB_PRN(FD, "[%s] %10s:%03d +%-15s\t:: " MESSAGE "\n", PREFIX, basename(__FILE__), \
+	       __LINE__, __FUNCTION__, ##__VA_ARGS__);                                    \
+	if (errno) {                                                                      \
+		NB_PRN(FD, "\t!errno: 0x%02x|%s!\n", errno, strerror(errno));             \
+		errno = 0;                                                                \
 	}
 
 #else
@@ -120,9 +118,9 @@ static void __attribute__ ((constructor)) ND_start()
  * - elide file, line, function and errno info
  * - avoid logging at all if message is null
  */
-#define NB_LOG(FD, PREFIX, MESSAGE, ...)					\
-	if (MESSAGE[0] != '\0') {						\
-		NB_PRN(FD, MESSAGE "\n", ##__VA_ARGS__);			\
+#define NB_LOG(FD, PREFIX, MESSAGE, ...)                 \
+	if (MESSAGE[0] != '\0') {                        \
+		NB_PRN(FD, MESSAGE "\n", ##__VA_ARGS__); \
 	}
 #endif
 
@@ -131,8 +129,7 @@ static void __attribute__ ((constructor)) ND_start()
  * Print INFO with "INF" prefix, becomes NOP if NDEBUG is defined.
  */
 #ifndef NDEBUG
-#define NB_inf(INFO, ...) \
-	NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__)
+#define NB_inf(INFO, ...) NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__)
 #else
 #define NB_inf(INFO, ...) ;
 #endif
@@ -143,29 +140,29 @@ static void __attribute__ ((constructor)) ND_start()
  * Dump is (losely speaking) in xxd format.
  */
 #ifndef NDEBUG
-#define NB_dump(BUF, BUF_LEN, INFO, ...)					\
-	do {									\
-		NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__);			\
-		size_t nb_i = 0;						\
-		for (; nb_i < BUF_LEN; nb_i++) {				\
-			/* starting address at the head of each line */		\
-			if (!(nb_i & 0xf))					\
-				NB_PRN(fdout, "%08zx:", nb_i);			\
-			/* space between groups of 2 bytes */			\
-			if (!(nb_i & 0x1))					\
-				NB_PRN(fdout, " ");				\
-			/* pad bytes to 2 hex digits always */			\
-			NB_PRN(fdout, "%02hhx", ((const char*)BUF)[nb_i]);	\
-			/* new line after 16 bytes */				\
-			if ((nb_i & 0xf) == 0xf)				\
-				NB_PRN(fdout, "\n");				\
-		}								\
-		/* corner case: avoid dual-newline when dumping an even multiple\
-		 * of 16.							\
-		 */								\
-		if ((nb_i & 0xf) != 0xf)					\
-			NB_PRN(fdout, "\n");					\
-	} while(0);
+#define NB_dump(BUF, BUF_LEN, INFO, ...)                                         \
+	do {                                                                     \
+		NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__);                       \
+		size_t nb_i = 0;                                                 \
+		for (; nb_i < BUF_LEN; nb_i++) {                                 \
+			/* starting address at the head of each line */          \
+			if (!(nb_i & 0xf))                                       \
+				NB_PRN(fdout, "%08zx:", nb_i);                   \
+			/* space between groups of 2 bytes */                    \
+			if (!(nb_i & 0x1))                                       \
+				NB_PRN(fdout, " ");                              \
+			/* pad bytes to 2 hex digits always */                   \
+			NB_PRN(fdout, "%02hhx", ((const char *)BUF)[nb_i]);      \
+			/* new line after 16 bytes */                            \
+			if ((nb_i & 0xf) == 0xf)                                 \
+				NB_PRN(fdout, "\n");                             \
+		}                                                                \
+		/* corner case: avoid dual-newline when dumping an even multiple \
+		 * of 16.                                                        \
+		 */                                                              \
+		if ((nb_i & 0xf) != 0xf)                                         \
+			NB_PRN(fdout, "\n");                                     \
+	} while (0);
 
 #else
 #define NB_dump(BUF, BUF_LEN, INFO, ...) ;
@@ -177,22 +174,19 @@ static void __attribute__ ((constructor)) ND_start()
  * Use this one for runtime messages which should be present (minus instrumentation)
  * in the NDEBUG (aka release) version.
  */
-#define NB_prn(OUTPUT, ...) \
-	NB_LOG(fdout, "PRN", OUTPUT, ##__VA_ARGS__)
+#define NB_prn(OUTPUT, ...) NB_LOG(fdout, "PRN", OUTPUT, ##__VA_ARGS__)
 
 /*	NB_line()
  * Prints a literal separator line.
  */
-#define NB_line() \
-	NB_LOG(fdout, "PRN", "------------")
+#define NB_line() NB_LOG(fdout, "PRN", "------------")
 
 
 /*	NB_wrn()
  * Print WARNING as "WRN"; is a NOP in release (when NDEBUG is defined).
  */
 #ifndef NDEBUG
-#define NB_wrn(WARNING, ...) \
-	NB_LOG(fderr, "WRN", WARNING, ##__VA_ARGS__)
+#define NB_wrn(WARNING, ...) NB_LOG(fderr, "WRN", WARNING, ##__VA_ARGS__)
 #else
 #define NB_wrn(WARNING, ...) ;
 #endif
@@ -203,9 +197,9 @@ static void __attribute__ ((constructor)) ND_start()
  * Test is NOT performed in release (NDEBUG) builds.
  */
 #ifndef NDEBUG
-#define NB_wrn_if(CONDITION, WARNING, ...)					\
-	if (NLC_UNLIKELY(CONDITION)) {					\
-		NB_wrn(WARNING, ##__VA_ARGS__);					\
+#define NB_wrn_if(CONDITION, WARNING, ...)      \
+	if (NLC_UNLIKELY(CONDITION)) {          \
+		NB_wrn(WARNING, ##__VA_ARGS__); \
 	}
 #else
 #define NB_wrn_if(CONDITION, WARNING, ...) ;
@@ -216,18 +210,18 @@ static void __attribute__ ((constructor)) ND_start()
  * Print ERROR as "ERR"; increment 'err_cnt'.
  * Is a full memory barrier.
  */
-#define NB_err(ERROR, ...)							\
-	do {									\
-		NB_LOG(fderr, "ERR", ERROR, ##__VA_ARGS__);			\
-		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST);		\
+#define NB_err(ERROR, ...)                                         \
+	do {                                                       \
+		NB_LOG(fderr, "ERR", ERROR, ##__VA_ARGS__);        \
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
 	} while (0)
 
 /*	NB_err_if()
  * Test CONDITION and call NB_err() if true.
  */
-#define NB_err_if(CONDITION, ERROR, ...)					\
-	if (NLC_UNLIKELY(CONDITION)) {					\
-		NB_err(ERROR, ##__VA_ARGS__);					\
+#define NB_err_if(CONDITION, ERROR, ...)      \
+	if (NLC_UNLIKELY(CONDITION)) {        \
+		NB_err(ERROR, ##__VA_ARGS__); \
 	}
 
 
@@ -235,19 +229,19 @@ static void __attribute__ ((constructor)) ND_start()
  * Print DEATH as "DIE"; increment 'err_cnt'; jump (goto) 'die'.
  * Is a full memory barrier.
  */
-#define NB_die(DEATH, ...)							\
-	do {									\
-		NB_LOG(fderr, "DIE", DEATH, ##__VA_ARGS__);			\
-		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST);		\
-		goto die;							\
+#define NB_die(DEATH, ...)                                         \
+	do {                                                       \
+		NB_LOG(fderr, "DIE", DEATH, ##__VA_ARGS__);        \
+		__atomic_add_fetch(&err_cnt, 1, __ATOMIC_SEQ_CST); \
+		goto die;                                          \
 	} while (0)
 
 /*	NB_die_if()
  * Test CONDITION and call NB_die() if true.
  */
-#define NB_die_if(CONDITION, DEATH, ...)					\
-	if (NLC_UNLIKELY(CONDITION)) {					\
-		NB_die(DEATH, ##__VA_ARGS__);					\
+#define NB_die_if(CONDITION, DEATH, ...)      \
+	if (NLC_UNLIKELY(CONDITION)) {        \
+		NB_die(DEATH, ##__VA_ARGS__); \
 	}
 
 
