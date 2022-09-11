@@ -203,9 +203,9 @@ static void __attribute__((constructor)) ND_start()
 	if (NLC_UNLIKELY(CONDITION)) {          \
 		NB_wrn(WARNING, ##__VA_ARGS__); \
 	}
-#define NB_wrn_on(CONDITION)           \
-	if (NLC_UNLIKELY(CONDITION)) { \
-		NB_wrn(#CONDITION);    \
+#define NB_wrn_on(CONDITION)              \
+	if (NLC_UNLIKELY(CONDITION)) {    \
+		NB_wrn("%s", #CONDITION); \
 	}
 #else
 #define NB_wrn_if(CONDITION, WARNING, ...)
@@ -234,9 +234,9 @@ static void __attribute__((constructor)) ND_start()
 /*	NB_err_on()
  * Test CONDITION and call NB_err(CONDITION) if true.
  */
-#define NB_err_on(CONDITION)           \
-	if (NLC_UNLIKELY(CONDITION)) { \
-		NB_err(#CONDITION);    \
+#define NB_err_on(CONDITION)              \
+	if (NLC_UNLIKELY(CONDITION)) {    \
+		NB_err("%s", #CONDITION); \
 	}
 
 
@@ -262,9 +262,9 @@ static void __attribute__((constructor)) ND_start()
 /*	NB_die_on()
  * Test CONDITION and call NB_die(CONDITION) if true.
  */
-#define NB_die_on(CONDITION)           \
-	if (NLC_UNLIKELY(CONDITION)) { \
-		NB_die(#CONDITION);    \
+#define NB_die_on(CONDITION)              \
+	if (NLC_UNLIKELY(CONDITION)) {    \
+		NB_die("%s", #CONDITION); \
 	}
 
 
