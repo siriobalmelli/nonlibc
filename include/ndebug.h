@@ -1,20 +1,20 @@
 #ifndef ndebug_h_
 #define ndebug_h_
 
-/*	ndebug.h
+/**
  * The nonlibc debug/info print toolkit.
  * Choice of prefix "NB" is a nod to Latin "Nota Bene" but can also stand for
  * "Nonlibc Buffer" or just "NdeBug" (your pick).
  *
  *
  * Table of statements:
- * | PREFIX  | FD     | NDEBUG* | STATEMENTS            | SIDE EFFECTS         |
- * | ------- | ------ | ------- | --------------------- | -------------------- |
- * | INF     | fdout  | NOP     | NB_inf(), NB_dump()   |                      |
- * | PRN     | fdout  |         | NB_prn(), NB_line()   |                      |
- * | WRN     | fderr  | NOP     | NB_wrn(), NB_wrn_if() |                      |
- * | ERR     | fderr  |         | NB_err(), NB_err_if() | err_cnt++;           |
- * | DIE     | fderr  |         | NB_die(), NB_die_if() | err_cnt++; goto die; |
+ * | PREFIX  | FD     | NDEBUG* | STATEMENTS                         | SIDE EFFECTS         |
+ * | ------- | ------ | ------- | ---------------------------------- | -------------------- |
+ * | INF     | fdout  | NOP     | NB_inf(), NB_dump()                |                      |
+ * | PRN     | fdout  |         | NB_prn(), NB_line()                |                      |
+ * | WRN     | fderr  | NOP     | NB_wrn(), NB_wrn_if(), NB_wrn_on() |                      |
+ * | ERR     | fderr  |         | NB_err(), NB_err_if(), NB_err_on() | err_cnt++;           |
+ * | DIE     | fderr  |         | NB_die(), NB_die_if(), NB_die_on() | err_cnt++; goto die; |
  * * = if NDEBUG is defined, certain statements are NOPs (discarded by cpp).
  *
  *
@@ -39,12 +39,13 @@
  * Are you looking at your screen in horror? Good - I have your attention.
  *
  * Let me explain:
- * You see, the function you're in the middle of has likely caused at least a couple
+ *
+ * The function you're in the middle of has likely caused at least a couple
  * state changes: you may have allocated memory, opened a file descriptor,
  * written data somewhere, etc.
- * If there's multiple places in your function where you check a value for error;
+ * If there are multiple places in your function where you check a value for error;
  * it's very tricky and kludgy to write bulletproof error handling code
- * in each one of these locations.
+ * in each of these locations.
  *
  * So how about this instead:
  * - put ONE block of error-handling instructions at the bottom
@@ -55,6 +56,7 @@
  * "Hey! that sounds like a Try/Catch block in [favorite language]!"
  *
  * Precisely.
+ *
  * (c) 2018 Sirio Balmelli
  */
 
@@ -131,7 +133,7 @@ static void __attribute__((constructor)) ND_start()
 #ifndef NDEBUG
 #define NB_inf(INFO, ...) NB_LOG(fdout, "INF", INFO, ##__VA_ARGS__)
 #else
-#define NB_inf(INFO, ...) ;
+#define NB_inf(INFO, ...)
 #endif
 
 /*	NB_dump()
@@ -188,7 +190,7 @@ static void __attribute__((constructor)) ND_start()
 #ifndef NDEBUG
 #define NB_wrn(WARNING, ...) NB_LOG(fderr, "WRN", WARNING, ##__VA_ARGS__)
 #else
-#define NB_wrn(WARNING, ...) ;
+#define NB_wrn(WARNING, ...)
 #endif
 
 /*	NB_wrn_if()
@@ -201,8 +203,13 @@ static void __attribute__((constructor)) ND_start()
 	if (NLC_UNLIKELY(CONDITION)) {          \
 		NB_wrn(WARNING, ##__VA_ARGS__); \
 	}
+#define NB_wrn_on(CONDITION)           \
+	if (NLC_UNLIKELY(CONDITION)) { \
+		NB_wrn(#CONDITION);    \
+	}
 #else
-#define NB_wrn_if(CONDITION, WARNING, ...) ;
+#define NB_wrn_if(CONDITION, WARNING, ...)
+#define NB_wrn_on(CONDITION)
 #endif
 
 
@@ -224,6 +231,14 @@ static void __attribute__((constructor)) ND_start()
 		NB_err(ERROR, ##__VA_ARGS__); \
 	}
 
+/*	NB_err_on()
+ * Test CONDITION and call NB_err(CONDITION) if true.
+ */
+#define NB_err_on(CONDITION)           \
+	if (NLC_UNLIKELY(CONDITION)) { \
+		NB_err(#CONDITION);    \
+	}
+
 
 /*	NB_die()
  * Print DEATH as "DIE"; increment 'err_cnt'; jump (goto) 'die'.
@@ -242,6 +257,14 @@ static void __attribute__((constructor)) ND_start()
 #define NB_die_if(CONDITION, DEATH, ...)      \
 	if (NLC_UNLIKELY(CONDITION)) {        \
 		NB_die(DEATH, ##__VA_ARGS__); \
+	}
+
+/*	NB_die_on()
+ * Test CONDITION and call NB_die(CONDITION) if true.
+ */
+#define NB_die_on(CONDITION)           \
+	if (NLC_UNLIKELY(CONDITION)) { \
+		NB_die(#CONDITION);    \
 	}
 
 
