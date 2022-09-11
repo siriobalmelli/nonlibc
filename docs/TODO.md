@@ -34,11 +34,6 @@ These are in order by priority:
 -	slow on Darwin ;(
 		(lack of mremap getting me down)
 
-## TODO: bootstrap.py
-
--	document
--	building on windows
-
 ## TODO: man pages
 
 -	nmem(3)

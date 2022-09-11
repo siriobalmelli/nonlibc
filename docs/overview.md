@@ -18,7 +18,7 @@ See the [fnvsum man page](man/fnvsum.md)
 If you would like to use `fnvsum` without installing:
 
 ```bash
-$ ./bootstrap.py
+$ make
 $ # hash stdin:
 $ echo -n '' | build-release/util/fnvsum
 cbf29ce484222325  -

@@ -31,17 +31,16 @@ You will need to have a few dependencies installed on your system:
 - [meson](http://mesonbuild.com/Getting-meson.html)
 - [ninja](https://ninja-build.org/)
 - [pandoc](http://pandoc.org/)
-- [cscope](http://cscope.sourceforge.net/)
 - a suitable C compiler
 	([gcc](https://gcc.gnu.org/) and [clang](https://clang.llvm.org/) are tested)
 
-Run `./bootstrap.sh` - chances are things will work automagically and
-	you'll find yourself with everything built and all tests running.
+Run `make check` - chances are things will work automagically and
+you'll find yourself with everything built and all tests running.
 
 ### I'm on Windows || It doesn't work
 
 Don't despair; if you can get the dependencies above to install,
-	things might still work with some manual twiddling:
+things might still work with some manual twiddling:
 
 ```bash
 meson --buildtype debugoptimized build-debug \
@@ -138,10 +137,8 @@ stdenv.mkDerivation rec {
 ### Using [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
 
 ```bash
-./bootstrap.sh \
-&& cd build-release \
-&& ninja test \
-&& sudo ninja install
+make
+sudo make install
 ```
 
 To verify things are kosher, check if you get some useful output from:

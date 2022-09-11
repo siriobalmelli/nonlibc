@@ -30,10 +30,24 @@ A good place to see implementation details is in the [test dir](test).
 
 ## [Building nonlibc](docs/building.md)
 
-TLDR - use either:
+Covers building, linking and using this library; TLDR:
 
-1. `nix-build`
-1. `meson`
+1. Set up tools, either by:
+
+    - Installing [meson](https://mesonbuild.com/) and [gnu make](https://www.gnu.org/software/make/)
+        on your platform
+
+    or
+
+    - entering a [nix-shell](https://nixos.wiki/wiki/Development_environment_with_nix-shell)
+
+1. Use `make`, which will call `meson` under the hood:
+
+    ```bash
+    make check  # build and run tests
+
+    make help  # full directory of make targets
+    ```
 
 ## [Hacking Tips](docs/hacking_tips.md)
 
